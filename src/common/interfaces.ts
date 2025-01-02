@@ -1,6 +1,6 @@
 import { IRasterCatalogUpsertRequestBody, ProductType, TileOutputFormat } from '@map-colonies/mc-model-types';
 import { ICreateJobBody, IJobResponse, OperationStatus } from '@map-colonies/mc-priority-queue';
-import { callbacksTargetArray, exportJobParameters, linksDefinition, TileFormatStrategy, exportFeatureCollection } from '@map-colonies/raster-shared';
+import { CallbacksTargetArray, ExportJobParameters, LinksDefinition, TileFormatStrategy } from '@map-colonies/raster-shared';
 import { BBox, FeatureCollection, Geometry } from 'geojson';
 
 export interface IConfig {
@@ -73,8 +73,8 @@ export interface ITaskParameters {
 export interface IExportInitRequest {
   crs: string;
   roi: FeatureCollection;
-  callbacks?: callbacksTargetArray;
-  fileNamesTemplates: linksDefinition;
+  callbacks?: CallbacksTargetArray;
+  fileNamesTemplates: LinksDefinition;
   relativeDirectoryPath: string;
   dbId: string;
   priority?: number;
@@ -87,4 +87,4 @@ export interface IExportInitRequest {
   description?: string;
 }
 
-export type CreateExportJobBody = ICreateJobBody<exportJobParameters, ITaskParameters>;
+export type CreateExportJobBody = ICreateJobBody<ExportJobParameters, ITaskParameters>;

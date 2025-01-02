@@ -2,12 +2,12 @@ import { Logger } from '@map-colonies/js-logger';
 import { RequestHandler } from 'express';
 import httpStatus from 'http-status-codes';
 import { injectable, inject } from 'tsyringe';
-import { callbackExportResponse } from '@map-colonies/raster-shared';
+import { CallbackExportResponse } from '@map-colonies/raster-shared';
 import { SERVICES } from '../../common/constants';
 import { ExportManager } from '../models/exportManager';
 import { ICreateExportRequest, ICreateExportJobResponse } from '../../common/interfaces';
 
-type CreateExportHandler = RequestHandler<undefined, ICreateExportJobResponse | callbackExportResponse, ICreateExportRequest>;
+type CreateExportHandler = RequestHandler<undefined, ICreateExportJobResponse | CallbackExportResponse, ICreateExportRequest>;
 
 @injectable()
 export class ExportController {

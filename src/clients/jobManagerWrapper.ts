@@ -5,7 +5,7 @@ import { IFindJobsRequest, JobManagerClient, OperationStatus } from '@map-coloni
 import { getUTCDate, IHttpRetryConfig } from '@map-colonies/mc-utils';
 import { Tracer } from '@opentelemetry/api';
 import { withSpanAsyncV4 } from '@map-colonies/telemetry';
-import { exportJobParameters, JobExportResponse } from '@map-colonies/raster-shared';
+import { ExportJobParameters, JobExportResponse } from '@map-colonies/raster-shared';
 import {
   CreateExportJobBody,
   GetJobResponse,
@@ -118,7 +118,7 @@ export class JobManagerWrapper extends JobManagerClient {
     expirationDate.setDate(expirationDate.getDate() + this.expirationDays);
     const taskParams: ITaskParameters[] = [{ blockDuplication: true }];
 
-    const jobParameters: exportJobParameters = {
+    const jobParameters: ExportJobParameters = {
       exportInputParams: {
         roi: data.roi,
         callbacks: data.callbacks,
@@ -157,7 +157,7 @@ export class JobManagerWrapper extends JobManagerClient {
         };
       }),
     };
-    const res = await this.createJob<exportJobParameters, ITaskParameters>(createJobRequest);
+    const res = await this.createJob<ExportJobParameters, ITaskParameters>(createJobRequest);
     const createJobResponse: ICreateExportJobResponse = {
       jobId: res.id,
       taskIds: res.taskIds,

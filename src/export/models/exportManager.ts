@@ -11,14 +11,7 @@ import { withSpanAsyncV4 } from '@map-colonies/telemetry';
 import { IConfig, ICreateExportJobResponse, ICreateExportRequest, IExportInitRequest, IGeometryRecord } from '@src/common/interfaces';
 import { Geometry, MultiPolygon, Polygon } from 'geojson';
 import { generateGeoIdentifier, parseFeatureCollection } from '@src/common/utils';
-import {
-  linksDefinition,
-  TileFormatStrategy,
-  callbackTarget,
-  MergerSourceType,
-  callbackExportResponse,
-  exportFeatureCollection,
-} from '@map-colonies/raster-shared';
+import { LinksDefinition, TileFormatStrategy, CallbackTarget, MergerSourceType, CallbackExportResponse } from '@map-colonies/raster-shared';
 import { JobManagerWrapper } from '../../clients/jobManagerWrapper';
 import { DEFAULT_CRS, DEFAULT_PRIORITY, SERVICES } from '../../common/constants';
 import { ValidationManager } from './validationManager';
@@ -42,7 +35,7 @@ export class ExportManager {
   }
 
   @withSpanAsyncV4
-  public async createExport(userInput: ICreateExportRequest): Promise<ICreateExportJobResponse | callbackExportResponse> {
+  public async createExport(userInput: ICreateExportRequest): Promise<ICreateExportJobResponse | CallbackExportResponse> {
     const { dbId, crs, priority, callbackURLs, description } = userInput;
     const layerMetadata = await this.validationManager.validateLayer(dbId);
 
@@ -79,11 +72,11 @@ export class ExportManager {
       srcRes
     );
 
-    const callbacks = callbackURLs ? callbackURLs.map((url) => <callbackTarget>{ url, roi }) : undefined;
+    const callbacks = callbackURLs ? callbackURLs.map((url) => <CallbackTarget>{ url, roi }) : undefined;
     const duplicationExist = await this.validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs ?? DEFAULT_CRS, callbacks);
 
     if (duplicationExist && duplicationExist.status === OperationStatus.COMPLETED) {
-      const callbackParam = duplicationExist as callbackExportResponse;
+      const callbackParam = duplicationExist as CallbackExportResponse;
       this.logger.info({
         jobStatus: callbackParam.status,
         jobId: callbackParam.jobId,
@@ -101,7 +94,7 @@ export class ExportManager {
     const prefixPackageName = this.generateExportFileNames(productType, resourceId, version, featuresRecords);
     const packageName = `${prefixPackageName}.gpkg`;
     const metadataFileName = `${prefixPackageName}.json`;
-    const fileNamesTemplates: linksDefinition = {
+    const fileNamesTemplates: LinksDefinition = {
       dataURI: packageName,
       metadataURI: metadataFileName,
     };
