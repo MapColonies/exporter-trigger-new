@@ -1,28 +1,53 @@
-{{- $tracingUrl := include "ts-server-boilerplate.tracingUrl" . -}}
-{{- $metricsUrl := include "ts-server-boilerplate.metricsUrl" . -}}
+{{- $chartName := include "exporter-trigger.name" . -}}
+{{- $tracing := (include "common.tracing.merged" .) | fromYaml }}
+{{- $metrics := (include "common.metrics.merged" .) | fromYaml }}
+{{- $serviceUrls := (include "common.serviceUrls.merged" .) | fromYaml }}
+{{- $storage := (include "common.storage.merged" .) | fromYaml }}
+{{- $configmapName := include "configmap.fullname" . }}
+{{- $jobDefinitions := (include "common.jobDefinitions.merged" .) | fromYaml }}
+
+
 {{- if .Values.enabled -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ printf "%s-configmap" (include "ts-server-boilerplate.fullname" .) }}
+  name: {{ $configmapName }}
 data:
   REQUEST_PAYLOAD_LIMIT: {{ .Values.env.requestPayloadLimit | quote }}
   RESPONSE_COMPRESSION_ENABLED: {{ .Values.env.responseCompressionEnabled | quote }}
   LOG_LEVEL: {{ .Values.env.logLevel | quote }}
   LOG_PRETTY_PRINT_ENABLED: {{ .Values.env.logPrettyPrintEnabled | quote }}
-  {{ if .Values.env.tracing.enabled }}
-  TELEMETRY_TRACING_ENABLED: 'true'
-  TELEMETRY_TRACING_URL: {{ $tracingUrl }}
+  TELEMETRY_TRACING_ENABLED: {{ $tracing.enabled | quote }}
+  {{ if $tracing.enabled }}
+  TELEMETRY_TRACING_URL: {{ $tracing.url }}
   {{ end }}
-  {{ if .Values.env.metrics.enabled }}
-  TELEMETRY_METRICS_ENABLED: 'true'
-  TELEMETRY_METRICS_URL: {{ $metricsUrl }}
+  TELEMETRY_METRICS_ENABLED: {{ $metrics.enabled | quote }}
+  {{ if $metrics.enabled}}
+  TELEMETRY_METRICS_URL: {{ $metrics.url }}
   {{ end }}
-  npm_config_cache: /tmp/
-  {{- with .Values.configManagement }}
-  CONFIG_NAME: {{ .name| quote }}
-  CONFIG_VERSION: {{ .version | quote }}
-  CONFIG_OFFLINE_MODE: {{ .offlineMode | quote }}
-  CONFIG_SERVER_URL: {{ .serverUrl | quote }}
-  {{- end -}}
+  JOB_MANAGER_URL: {{ $serviceUrls.jobManager | quote }}
+  CLEANUP_EXPIRATION_DAYS: {{ .Values.env.cleanupExpirationDays | quote }}
+  RASTER_CATALOG_MANAGER_URL: {{ $serviceUrls.catalogManager | quote }}
+  JOB_DOMAIN: {{ .Values.global.domain | quote }}
+  EXPORT_JOB_TYPE: {{ $jobDefinitions.jobs.export.type | quote }}
+  TILES_TASK_TYPE: {{ $jobDefinitions.tasks.export.type | quote }}
+  HTTP_RETRY_ATTEMPTS: {{ .Values.env.httpRetry.attempts | quote }}
+  HTTP_RETRY_DELAY: {{ .Values.env.httpRetry.delay | quote }}
+  HTTP_RETRY_SHOULD_RESET_TIMEOUT: {{ .Values.env.httpRetry.shouldResetTimeout | quote }}
+  DISABLE_HTTP_CLIENT_LOGS: {{ .Values.env.disableHttpClientLogs | quote }}
+  TILES_PROVIDER: {{ $storage.tilesStorageProvider | quote }}
+  DOWNLOAD_SERVER_PUBLIC_DNS: {{ $serviceUrls.downloadServerPublicDNS | quote }}
+  FINALIZE_POLLING_TIMEOUT_MS: {{ .Values.env.finalizePollingTimeMS | quote }}
+  JPEG_TILE_ESTIMATED_SIZE_IN_BYTES: {{ .Values.env.estimatedStorageCalculation.jpegTileEstimatedSizeInBytes | quote }}
+  PNG_TILE_ESTIMATED_SIZE_IN_BYTES: {{ .Values.env.estimatedStorageCalculation.pngTileEstimatedSizeInBytes | quote }}
+  STORAGE_FACTOR_BUFFER: {{ .Values.env.estimatedStorageCalculation.storageFactorBuffer | quote }}
+  VALIDATE_STORAGE_SIZE: {{ .Values.env.estimatedStorageCalculation.validateStorageSize | quote }}
+  QUEUE_JOB_MANAGER_BASE_URL: {{ $serviceUrls.jobManager | quote }}
+  QUEUE_HEART_BEAT_MANAGER_BASE_URL: {{ $serviceUrls.heartbeatManager | quote }}
+  QUEUE_DEQUEUE_FINALIZE_INTERVAL_MS: {{ .Values.env.queue.dequeueFinalizeIntervalMs | quote }}
+  QUEUE_HEART_BEAT_INTERVAL_MS: {{ .Values.env.queue.heartbeatIntervalMs | quote }}
+  FINALIZE_TASK_TYPE: {{ $jobDefinitions.tasks.finalize.type | quote }}
+  FINALIZE_TASKS_ATTEMPTS: {{ .Values.env.queue.finalizeTasksAttempts | quote }}
+  ROI_BUFFER_METER: {{ .Values.env.roiBufferMeter | quote }}
+  MIN_CONTAINED_PERCENTAGE: {{ .Values.env.minContainedPercentage | quote }}
 {{- end }}

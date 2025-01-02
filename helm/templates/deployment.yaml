@@ -1,125 +1,90 @@
 {{- $releaseName := .Release.Name -}}
-{{- $chartName := include "ts-server-boilerplate.name" . -}}
-{{- $cloudProviderFlavor := include "ts-server-boilerplate.cloudProviderFlavor" . -}}
-{{- $cloudProviderDockerRegistryUrl := include "ts-server-boilerplate.cloudProviderDockerRegistryUrl" . -}}
-{{- $cloudProviderImagePullSecretName := include "ts-server-boilerplate.cloudProviderImagePullSecretName" . -}}
-{{- $imageTag := include "ts-server-boilerplate.tag" . -}}
+{{- $chartName := include "exporter-trigger.name" . -}}
+{{- $metrics := (include "common.metrics.merged" .) | fromYaml }}
+{{- $cloudProviderFlavor := include "exporter-trigger.cloudProviderFlavor" . -}}
+{{- $cloudProviderDockerRegistryUrl := include "exporter-trigger.cloudProviderDockerRegistryUrl" . -}}
+{{- $cloudProviderImagePullSecretName := include "exporter-trigger.cloudProviderImagePullSecretName" . -}}
+{{- $imageTag := include "exporter-trigger.tag" . -}}
 {{- if .Values.enabled -}}
+
+{{- $fs := (include "common.fs.merged" .) | fromYaml }}
+{{- $configmapName := include "configmap.fullname" . }}
+{{- $deploymentName := include "deployment.fullname" . }}
+{{ $gpkgPath := (printf "%s%s" "/app/tiles_outputs/" $fs.internalPvc.gpkgSubPath) }}
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ printf "%s-deployment" (include "ts-server-boilerplate.fullname" .) }}
+  name: {{ $deploymentName }}
   labels:
     app: {{ $chartName }}
     component: {{ $chartName }}
-    environment: {{ include "ts-server-boilerplate.environment" . }}
+    environment: {{ include "exporter-trigger.environment" . }}
     release: {{ $releaseName }}
-    {{- include "ts-server-boilerplate.labels" . | nindent 4 }}
+    {{- include "exporter-trigger.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
-  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   selector:
     matchLabels:
       app: {{ $chartName }}
       release: {{ $releaseName }}
       run: {{ $releaseName }}-{{ $chartName }}
-      {{- include "ts-server-boilerplate.selectorLabels" . | nindent 6 }}
+      {{- include "exporter-trigger.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
         app: {{ $chartName }}
         release: {{ $releaseName }}
         run: {{ $releaseName }}-{{ $chartName }}
-        {{- include "ts-server-boilerplate.selectorLabels" . | nindent 8 }}
+        {{- include "exporter-trigger.selectorLabels" . | nindent 8 }}
       annotations:
-      {{- if .Values.resetOnConfigChange }}
+        {{- if .Values.resetOnConfigChange }}
         checksum/configmap: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-      {{- end }}
-      {{- if .Values.podAnnotations }}
-      {{- toYaml .Values.podAnnotations | nindent 8 }}
-      {{- end }}
+        {{- end }}
+        {{- if .Values.podAnnotations }}
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+        {{- end }}
+        {{ if $metrics.enabled }}
+        prometheus.io/port: {{ $metrics.prometheus.port | quote }}
+        prometheus.io/scrape: {{ $metrics.prometheus.scrape | quote }}
+        {{- end }}
     spec:
-    {{- if $cloudProviderImagePullSecretName }}
+      {{- if $cloudProviderImagePullSecretName }}
       imagePullSecrets:
-        - name: {{ $cloudProviderImagePullSecretName | quote }}
-    {{- end }}
+      - name: {{ $cloudProviderImagePullSecretName | quote }}
+      {{- end }}    
       containers:
-        - name: {{ $releaseName }}-{{ $chartName }}-deployment
+        - name: {{ $releaseName }}
           {{- with .Values.image }}
           image: {{ $cloudProviderDockerRegistryUrl }}{{ .repository }}:{{ $imageTag }}
-          imagePullPolicy: {{ .pullPolicy | default "IfNotPresent" }}
           {{- end }}
-          {{- if .Values.command }}
-          command: 
-          {{- toYaml .Values.command | nindent 12 }}
-          {{- if .Values.args }}
-          args: 
-          {{- toYaml .Values.args | nindent 12 }}
-          {{- end }}
-          {{- end }}
-          volumeMounts:
-            {{- if .Values.caSecretName }}
-            - mountPath: {{ printf "%s/%s" .Values.caPath .Values.caKey | quote }}
-              name: root-ca
-              subPath: {{ quote .Values.caKey }}
-            {{- end }}
-            {{- if .Values.extraVolumeMounts -}}
-              {{ toYaml .Values.extraVolumeMounts | nindent 12 }}
-            {{- end }}
           env:
             - name: SERVER_PORT
               value: {{ .Values.env.targetPort | quote }}
-            {{- if .Values.caSecretName }}
-            - name: REQUESTS_CA_BUNDLE
-              value: {{ printf "%s/%s" .Values.caPath .Values.caKey | quote }}
-            - name: NODE_EXTRA_CA_CERTS
-              value: {{ printf "[%s/%s]" .Values.caPath .Values.caKey | quote }}
-            {{- end }}
-            {{- if .Values.extraEnvVars }}
-            {{- toYaml .Values.extraEnvVars | nindent 12 }}
-            {{- end }}            
+            - name: GPKGS_LOCATION
+              value: {{ $gpkgPath }}
           envFrom:
             - configMapRef:
-                name: {{ printf "%s-configmap" (include "ts-server-boilerplate.fullname" .) }}
+                name: {{ $configmapName }}
           ports:
             - name: http
               containerPort: {{ .Values.env.targetPort }}
-              protocol: {{ .Values.env.protocol }}
-          {{- if .Values.livenessProbe.enabled }}
+              protocol: TCP
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
           livenessProbe:
-            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
-            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
-            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+            initialDelaySeconds: {{ .Values.initialDelaySeconds }}
             httpGet:
-              path: {{ .Values.livenessProbe.path }}
-              port: {{ .Values.env.targetPort }}
-          {{- end }}
-          {{- if .Values.readinessProbe.enabled }}
-          readinessProbe:
-            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
-            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
-            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
-            httpGet:
-              path: {{ .Values.readinessProbe.path }}
-              port: {{ .Values.env.targetPort }}
-          {{- end }}        
+              path: /liveness
+              port: http
+          volumeMounts:
+            - name: internal-storage
+              mountPath: /app/tiles_outputs
           {{- if .Values.resources.enabled }}
           resources:
             {{- toYaml .Values.resources.value | nindent 12 }}
           {{- end }}
-        {{- if .Values.sidecars }}
-        {{ tpl (toYaml .Values.sidecars) . | nindent 8 }}
-        {{- end }}
       volumes:
-        - name: nginx-config
-          configMap:
-            name: 'nginx-extra-configmap'      
-        {{- if .Values.caSecretName }}
-        - name: root-ca
-          secret:
-            secretName: {{ .Values.caSecretName }}
-        {{- end }}
-        {{- if .Values.extraVolumes -}}
-          {{ tpl (toYaml .Values.extraVolumes) . | nindent 8 }}
-        {{- end }}    
+        - name: internal-storage
+          persistentVolumeClaim:
+            claimName: {{ $fs.internalPvc.name }}
 {{- end -}}
