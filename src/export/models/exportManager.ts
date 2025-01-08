@@ -37,7 +37,7 @@ export class ExportManager {
   @withSpanAsyncV4
   public async createExport(userInput: ICreateExportRequest): Promise<ICreateExportJobResponse | CallbackExportResponse> {
     const { dbId, crs, priority, callbackURLs, description } = userInput;
-    const layerMetadata = await this.validationManager.validateLayer(dbId);
+    const layerMetadata = await this.validationManager.findLayer(dbId);
 
     let roi = userInput.roi;
 

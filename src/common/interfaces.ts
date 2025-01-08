@@ -1,4 +1,4 @@
-import { IRasterCatalogUpsertRequestBody, ProductType, TileOutputFormat } from '@map-colonies/mc-model-types';
+import { IRasterCatalogUpsertRequestBody, LayerData, LayerMetadata, Link, ProductType, TileOutputFormat } from '@map-colonies/mc-model-types';
 import { ICreateJobBody, IJobResponse, OperationStatus } from '@map-colonies/mc-priority-queue';
 import { CallbacksTargetArray, ExportJobParameters, LinksDefinition, TileFormatStrategy } from '@map-colonies/raster-shared';
 import { BBox, FeatureCollection, Geometry } from 'geojson';

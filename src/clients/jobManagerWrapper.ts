@@ -47,6 +47,7 @@ export class JobManagerWrapper extends JobManagerClient {
     return job;
   }
 
+  @withSpanAsyncV4
   public async findExportJob(
     status: OperationStatus,
     jobParams: JobExportDuplicationParams,
@@ -69,29 +70,13 @@ export class JobManagerWrapper extends JobManagerClient {
     return undefined;
   }
 
-  public async getInProgressJobs(shouldReturnTasks = false): Promise<JobExportResponse[] | undefined> {
-    const queryParams: IFindJobsRequest = {
-      isCleaned: false,
-      type: this.tilesJobType,
-      shouldReturnTasks,
-      status: OperationStatus.IN_PROGRESS,
-    };
-    const jobs = await this.getExportJobs(queryParams);
-    return jobs;
-  }
-
+  //TODO: check how export cleanup works and which params it needs+ change to receive entire job
   @withSpanAsyncV4
-  public async getExportJobs(queryParams: IFindJobsRequest): Promise<JobExportResponse[] | undefined> {
-    this.logger.debug({ ...queryParams }, `Getting jobs that match these parameters`);
-    const jobs = await this.get<JobExportResponse[] | undefined>('/jobs', queryParams as unknown as Record<string, unknown>);
-    return jobs;
-  }
-
-  //TODO: check how export cleanup works and which params it needs
   public async validateAndUpdateExpiration(jobId: string): Promise<void> {
     const getOrUpdateURL = `/jobs/${jobId}`;
     const newExpirationDate = getUTCDate();
     newExpirationDate.setDate(newExpirationDate.getDate() + this.expirationDays);
+    //TODO: remove this
     const job = await this.get<JobExportResponse>(getOrUpdateURL);
     const oldExpirationDate = new Date(job.parameters.cleanupDataParams?.cleanupExpirationTimeUTC as Date);
     if (oldExpirationDate < newExpirationDate) {
@@ -164,6 +149,13 @@ export class JobManagerWrapper extends JobManagerClient {
       status: OperationStatus.PENDING,
     };
     return createJobResponse;
+  }
+
+  @withSpanAsyncV4
+  private async getExportJobs(queryParams: IFindJobsRequest): Promise<JobExportResponse[] | undefined> {
+    this.logger.debug({ ...queryParams }, `Getting jobs that match these parameters`);
+    const jobs = await this.get<JobExportResponse[] | undefined>('/jobs', queryParams as unknown as Record<string, unknown>);
+    return jobs;
   }
 
   private findExportJobWithMatchingParams(jobs: JobExportResponse[], jobParams: JobExportDuplicationParams): JobExportResponse | undefined {

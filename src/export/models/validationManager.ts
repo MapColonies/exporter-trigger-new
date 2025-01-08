@@ -7,7 +7,7 @@ import { featureCollectionBooleanEqual } from '@map-colonies/mc-utils';
 import { type IJobResponse, OperationStatus } from '@map-colonies/mc-priority-queue';
 import { BadRequestError } from '@map-colonies/error-types';
 import { LayerMetadata } from '@map-colonies/mc-model-types';
-import { callbackExportResponse, callbacksTargetArray, exportJobParameters, JobExportResponse } from '@map-colonies/raster-shared';
+import { CallbackExportResponse, CallbacksTargetArray, ExportJobParameters, JobExportResponse } from '@map-colonies/raster-shared';
 import { SERVICES } from '../../common/constants';
 import { JobManagerWrapper } from '../../clients/jobManagerWrapper';
 import { RasterCatalogManagerClient } from '../../clients/rasterCatalogManagerClient';
@@ -25,7 +25,7 @@ export class ValidationManager {
   ) {}
 
   @withSpanAsyncV4
-  public async validateLayer(requestedLayerId: string): Promise<LayerMetadata> {
+  public async findLayer(requestedLayerId: string): Promise<LayerMetadata> {
     const layer = await this.rasterCatalogManager.findLayer(requestedLayerId);
     return layer.metadata;
   }
@@ -37,8 +37,8 @@ export class ValidationManager {
     dbId: string,
     roi: FeatureCollection,
     crs: string,
-    callbackUrls?: callbacksTargetArray
-  ): Promise<callbackExportResponse | ICreateExportJobResponse | undefined> {
+    callbackUrls?: CallbacksTargetArray
+  ): Promise<CallbackExportResponse | ICreateExportJobResponse | undefined> {
     const dupParams: JobExportDuplicationParams = {
       resourceId,
       version,
@@ -71,9 +71,7 @@ export class ValidationManager {
     }
 
     if (record.zoomLevel < record.minZoomLevel) {
-      throw new BadRequestError(
-        `The requested minResolutionDeg ${record.minResolutionDeg} is larger then maxResolutionDeg ${record.targetResolutionDeg}`
-      );
+      throw new BadRequestError(`The requested resolution ${record.zoomLevel} is smaller then minResolutionDeg ${record.minZoomLevel}`);
     }
   }
 
@@ -101,7 +99,7 @@ export class ValidationManager {
   }
 
   @withSpanAsyncV4
-  private async checkForExportCompleted(dupParams: JobExportDuplicationParams): Promise<callbackExportResponse | undefined> {
+  private async checkForExportCompleted(dupParams: JobExportDuplicationParams): Promise<CallbackExportResponse | undefined> {
     this.logger.info({ ...dupParams, roi: undefined, msg: `Checking for COMPLETED duplications with parameters` });
     const responseJob = await this.jobManagerClient.findExportJob(OperationStatus.COMPLETED, dupParams);
     if (responseJob) {
@@ -109,14 +107,14 @@ export class ValidationManager {
       return {
         ...responseJob.parameters.callbackParams,
         status: OperationStatus.COMPLETED,
-      } as callbackExportResponse;
+      } as CallbackExportResponse;
     }
   }
 
   @withSpanAsyncV4
   private async checkForExportProcessing(
     dupParams: JobExportDuplicationParams,
-    newCallbacks?: callbacksTargetArray
+    newCallbacks?: CallbacksTargetArray
   ): Promise<ICreateExportJobResponse | undefined> {
     this.logger.info({ ...dupParams, roi: undefined, msg: `Checking for PROCESSING duplications with parameters` });
     const processingJob =
@@ -124,16 +122,17 @@ export class ValidationManager {
       (await this.jobManagerClient.findExportJob(OperationStatus.PENDING, dupParams, true));
     if (processingJob) {
       await this.updateExportCallbackURLs(processingJob, newCallbacks);
+      console.log(processingJob.status === OperationStatus.PENDING);
       return {
         jobId: processingJob.id,
         taskIds: (processingJob.tasks as unknown as JobExportResponse[]).map((t) => t.id),
-        status: OperationStatus.IN_PROGRESS,
+        status: processingJob.status === OperationStatus.PENDING ? OperationStatus.PENDING : OperationStatus.IN_PROGRESS,
       };
     }
   }
 
   @withSpanAsyncV4
-  private async updateExportCallbackURLs(processingJob: JobExportResponse, newCallbacks?: callbacksTargetArray): Promise<void> {
+  private async updateExportCallbackURLs(processingJob: JobExportResponse, newCallbacks?: CallbacksTargetArray): Promise<void> {
     if (!newCallbacks) {
       return;
     }
@@ -157,7 +156,7 @@ export class ValidationManager {
         }
       }
     }
-    await this.jobManagerClient.updateJob<exportJobParameters>(processingJob.id, {
+    await this.jobManagerClient.updateJob<ExportJobParameters>(processingJob.id, {
       parameters: processingJob.parameters,
     });
   }
