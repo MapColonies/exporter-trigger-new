@@ -35,26 +35,14 @@
       }
     }
   },
-  "storageEstimation": {
-    "jpegTileEstimatedSizeInBytes": 12500,
-    "pngTileEstimatedSizeInBytes": 12500,
-    "storageFactorBuffer": 1.25,
-    "validateStorageSize": true
-  },
   "cleanupExpirationDays": 30,
   "externalClientsConfig": {
     "clientsUrls": {
       "jobManager": {
-        "url": "https://common-job-manager-route-raster-dev.apps.j1lk3njp.eastus.aroapp.io",
-        "dequeueFinalizeIntervalMs": 1000,
-        "finalizeTasksAttempts": 5
+        "url": "https://common-job-manager-route-raster-dev.apps.j1lk3njp.eastus.aroapp.io"
       },
       "rasterCatalogManager": {
         "url": "https://raster-core-dev-raster-catalog-manager-route-raster-dev.apps.j1lk3njp.eastus.aroapp.io"
-      },
-      "heartbeatManager": {
-        "url": "https://common-heartbeat-manager-route-raster-dev.apps.j1lk3njp.eastus.aroapp.io",
-        "heartbeatIntervalMs": 300
       }
     },
     "httpRetry": {

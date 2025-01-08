@@ -46,16 +46,10 @@
   "externalClientsConfig": {
     "clientsUrls": {
       "jobManager": {
-        "url": "http://job-manager-job-manager",
-        "dequeueFinalizeIntervalMs": 1000,
-        "finalizeTasksAttempts": 5
+        "url": "http://job-manager"
       },
       "rasterCatalogManager": {
-        "url": "http://catalog-manager-catalog-manager"
-      },
-      "heartbeatManager": {
-        "url": "http://heartbeat-manage-heartbeat-manager",
-        "heartbeatIntervalMs": 300
+        "url": "http://raster-catalog-manager"
       }
     },
     "httpRetry": {
@@ -67,15 +61,10 @@
   },
   "tilesProvider": "S3",
   "gpkgsLocation": "/app/tiles_outputs/gpkgs",
-  "downloadServerUrl": "http://download-service",
-  "finalizePollingTimeMS": 2000,
   "jobDefinitions": {
     "tasks": {
-      "export": {
-        "type": "export"
-      },
-      "finalize": {
-        "type": "finalize"
+      "init": {
+        "type": "init"
       }
     },
     "jobs": {
