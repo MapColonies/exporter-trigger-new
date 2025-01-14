@@ -1,9 +1,12 @@
 import checkDiskSpace from 'check-disk-space';
-import { FeatureCollection, Geometry } from 'geojson';
-import { degreesPerPixelToZoomLevel, zoomLevelToResolutionMeter } from '@map-colonies/mc-utils';
-import md5 from 'md5';
-import { ZOOM_ZERO_RESOLUTION } from './constants';
+import { FeatureCollection } from 'geojson';
+import { bboxToTileRange, degreesPerPixelToZoomLevel, ITileRange, zoomLevelToResolutionMeter } from '@map-colonies/mc-utils';
+import { TileOutputFormat } from '@map-colonies/raster-shared';
+import config from 'config';
+import { container } from 'tsyringe';
+import { Logger } from '@map-colonies/js-logger';
 import { IGeometryRecord, IStorageStatusResponse } from './interfaces';
+import { SERVICES, ZOOM_ZERO_RESOLUTION } from './constants';
 
 export const getStorageStatus = async (gpkgsLocation: string): Promise<IStorageStatusResponse> => {
   return checkDiskSpace(gpkgsLocation);
@@ -32,13 +35,38 @@ export const parseFeatureCollection = (featuresCollection: FeatureCollection): I
   return parsedGeoRecord;
 };
 
-/**
- * generated unique hashed string value for FeatureCollection geography - notice! features order influence on hashing
- * @param geo FeatureCollection object
- * @returns md5 hashed string
- */
-export const generateGeoIdentifier = (geo: FeatureCollection): string => {
-  const stringifiedGeo = JSON.stringify(geo);
-  const additionalIdentifiers = md5(stringifiedGeo);
-  return additionalIdentifiers;
+export const calculateEstimateGpkgSize = (featuresRecords: IGeometryRecord[], tileOutputFormat: TileOutputFormat): number => {
+  const tileEstimatedSize = getTileEstimatedSize(tileOutputFormat);
+  const batches: ITileRange[] = [];
+  featuresRecords.forEach((record) => {
+    for (let zoom = record.minZoomLevel; zoom <= record.zoomLevel; zoom++) {
+      const recordBatches = bboxToTileRange(record.sanitizedBox, zoom);
+      batches.push(recordBatches);
+    }
+  });
+
+  let totalTilesCount = 0;
+  batches.forEach((batch) => {
+    const width = batch.maxX - batch.minX;
+    const height = batch.maxY - batch.minY;
+    const area = width * height;
+    totalTilesCount += area;
+  });
+  const gpkgEstimatedSize = totalTilesCount * tileEstimatedSize;
+  return gpkgEstimatedSize;
+};
+
+export const getTileEstimatedSize = (tileOutputFormat: TileOutputFormat): number => {
+  const jpegTileEstimatedSizeInBytes = config.get<number>('storageEstimation.jpegTileEstimatedSizeInBytes');
+  const pngTileEstimatedSizeInBytes = config.get<number>('storageEstimation.pngTileEstimatedSizeInBytes');
+  const logger = container.resolve<Logger>(SERVICES.LOGGER);
+  let tileEstimatedSize;
+  if (tileOutputFormat === TileOutputFormat.JPEG) {
+    tileEstimatedSize = jpegTileEstimatedSizeInBytes;
+  } else {
+    tileEstimatedSize = pngTileEstimatedSizeInBytes;
+  }
+  logger.debug(`single tile size defined as ${tileOutputFormat} from configuration: ${tileEstimatedSize} bytes`);
+
+  return tileEstimatedSize;
 };

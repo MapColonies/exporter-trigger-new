@@ -6,7 +6,7 @@ const exportRouterFactory: FactoryFunction<Router> = (dependencyContainer) => {
   const router = Router();
   const controller = dependencyContainer.resolve(ExportController);
 
-  router.post('/roi', controller.createPackageRoi);
+  router.post('/', controller.createPackageRoi);
 
   return router;
 };

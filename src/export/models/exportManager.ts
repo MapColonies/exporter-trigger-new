@@ -1,7 +1,6 @@
 import { sep } from 'node:path';
 import { Logger } from '@map-colonies/js-logger';
 import { Tracer } from '@opentelemetry/api';
-import PolygonBbox from '@turf/bbox';
 import { inject, injectable } from 'tsyringe';
 import { degreesPerPixelToZoomLevel } from '@map-colonies/mc-utils';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
@@ -10,15 +9,16 @@ import { feature, featureCollection } from '@turf/helpers';
 import { withSpanAsyncV4 } from '@map-colonies/telemetry';
 import { IConfig, ICreateExportJobResponse, ICreateExportRequest, IExportInitRequest, IGeometryRecord } from '@src/common/interfaces';
 import { Geometry, MultiPolygon, Polygon } from 'geojson';
-import { generateGeoIdentifier, parseFeatureCollection } from '@src/common/utils';
-import { LinksDefinition, TileFormatStrategy, CallbackTarget, MergerSourceType, CallbackExportResponse } from '@map-colonies/raster-shared';
+import { calculateEstimateGpkgSize, parseFeatureCollection } from '@src/common/utils';
+import { LinksDefinition, TileFormatStrategy, SourceType, CallbackExportResponse, TileOutputFormat, CallbackUrls } from '@map-colonies/raster-shared';
+import { v4 as uuidv4 } from 'uuid';
 import { JobManagerWrapper } from '../../clients/jobManagerWrapper';
 import { DEFAULT_CRS, DEFAULT_PRIORITY, SERVICES } from '../../common/constants';
 import { ValidationManager } from './validationManager';
 
 @injectable()
 export class ExportManager {
-  private readonly tilesProvider: MergerSourceType;
+  private readonly tilesProvider: SourceType;
   private readonly gpkgsLocation: string;
 
   public constructor(
@@ -28,10 +28,9 @@ export class ExportManager {
     @inject(JobManagerWrapper) private readonly jobManagerClient: JobManagerWrapper,
     @inject(ValidationManager) private readonly validationManager: ValidationManager
   ) {
-    this.tilesProvider = config.get<MergerSourceType>('tilesProvider');
+    this.tilesProvider = config.get<SourceType>('tilesProvider');
     this.gpkgsLocation = config.get<string>('gpkgsLocation');
-
-    this.tilesProvider = this.tilesProvider.toUpperCase() as MergerSourceType;
+    this.tilesProvider = this.tilesProvider.toUpperCase() as SourceType;
   }
 
   @withSpanAsyncV4
@@ -72,7 +71,7 @@ export class ExportManager {
       srcRes
     );
 
-    const callbacks = callbackURLs ? callbackURLs.map((url) => <CallbackTarget>{ url, roi }) : undefined;
+    const callbacks = callbackURLs ? callbackURLs.map((url) => <CallbackUrls>{ url }) : undefined;
     const duplicationExist = await this.validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs ?? DEFAULT_CRS, callbacks);
 
     if (duplicationExist && duplicationExist.status === OperationStatus.COMPLETED) {
@@ -90,6 +89,9 @@ export class ExportManager {
       return duplicationExist;
     }
 
+    const estimatesGpkgSize = calculateEstimateGpkgSize(featuresRecords, layerMetadata.tileOutputFormat as TileOutputFormat);
+    await this.validationManager.validateFreeSpace(estimatesGpkgSize, this.gpkgsLocation);
+
     //creation of params
     const prefixPackageName = this.generateExportFileNames(productType, resourceId, version, featuresRecords);
     const packageName = `${prefixPackageName}.gpkg`;
@@ -98,7 +100,7 @@ export class ExportManager {
       dataURI: packageName,
       metadataURI: metadataFileName,
     };
-    const additionalIdentifiers = generateGeoIdentifier(roi);
+    const additionalIdentifiers = uuidv4();
     const separator = this.getSeparator();
     const packageRelativePath = `${additionalIdentifiers}${separator}${packageName}`;
 
@@ -115,8 +117,9 @@ export class ExportManager {
       productType,
       priority: priority ?? DEFAULT_PRIORITY,
       description,
-      targetFormat: layerMetadata.tileOutputFormat,
+      targetFormat: layerMetadata.tileOutputFormat as TileOutputFormat,
       outputFormatStrategy: TileFormatStrategy.MIXED,
+      gpkgEstimatedSize: estimatesGpkgSize,
     };
     const jobCreated = await this.jobManagerClient.createExportJob(workerInput);
     return jobCreated;

@@ -1,28 +1,39 @@
 import { Logger } from '@map-colonies/js-logger';
-import { Tracer, trace } from '@opentelemetry/api';
+import { Tracer } from '@opentelemetry/api';
 import { withSpanAsyncV4, withSpanV4 } from '@map-colonies/telemetry';
 import type { FeatureCollection, MultiPolygon, Polygon } from 'geojson';
 import { inject, injectable } from 'tsyringe';
-import { featureCollectionBooleanEqual } from '@map-colonies/mc-utils';
-import { type IJobResponse, OperationStatus } from '@map-colonies/mc-priority-queue';
-import { BadRequestError } from '@map-colonies/error-types';
+import { OperationStatus } from '@map-colonies/mc-priority-queue';
+import { BadRequestError, InsufficientStorage } from '@map-colonies/error-types';
 import { LayerMetadata } from '@map-colonies/mc-model-types';
-import { CallbackExportResponse, CallbacksTargetArray, ExportJobParameters, JobExportResponse } from '@map-colonies/raster-shared';
+import { CallbackExportResponse, CallbackUrlsTargetArray, ExportJobParameters, JobExportResponse } from '@map-colonies/raster-shared';
+import { getStorageStatus } from '@src/common/utils';
 import { SERVICES } from '../../common/constants';
 import { JobManagerWrapper } from '../../clients/jobManagerWrapper';
 import { RasterCatalogManagerClient } from '../../clients/rasterCatalogManagerClient';
-import { IConfig, ICreateExportJobResponse, IGeometryRecord, JobExportDuplicationParams } from '../../common/interfaces';
+import {
+  IConfig,
+  ICreateExportJobResponse,
+  IGeometryRecord,
+  IStorageEstimation,
+  IStorageStatusResponse,
+  JobExportDuplicationParams,
+} from '../../common/interfaces';
 import { sanitizeBbox } from '../../utils/geometry';
 
 @injectable()
 export class ValidationManager {
+  private readonly storageEstimation: IStorageEstimation;
+
   public constructor(
     @inject(SERVICES.CONFIG) private readonly config: IConfig,
     @inject(SERVICES.LOGGER) private readonly logger: Logger,
     @inject(SERVICES.TRACER) public readonly tracer: Tracer,
     @inject(JobManagerWrapper) private readonly jobManagerClient: JobManagerWrapper,
     @inject(RasterCatalogManagerClient) private readonly rasterCatalogManager: RasterCatalogManagerClient
-  ) {}
+  ) {
+    this.storageEstimation = config.get<IStorageEstimation>('storageEstimation');
+  }
 
   @withSpanAsyncV4
   public async findLayer(requestedLayerId: string): Promise<LayerMetadata> {
@@ -37,7 +48,7 @@ export class ValidationManager {
     dbId: string,
     roi: FeatureCollection,
     crs: string,
-    callbackUrls?: CallbacksTargetArray
+    callbackUrls?: CallbackUrlsTargetArray
   ): Promise<CallbackExportResponse | ICreateExportJobResponse | undefined> {
     const dupParams: JobExportDuplicationParams = {
       resourceId,
@@ -99,6 +110,22 @@ export class ValidationManager {
   }
 
   @withSpanAsyncV4
+  public async validateFreeSpace(estimatesGpkgSize: number, gpkgsLocation: string): Promise<void> {
+    const diskFreeSpace = await this.getFreeStorage(gpkgsLocation); // calculate free space including other running jobs
+    this.logger.debug({ msg: `Estimated requested gpkg size: ${estimatesGpkgSize}, Estimated free space: ${diskFreeSpace}` });
+    const isEnoughStorage = diskFreeSpace - estimatesGpkgSize >= 0;
+    if (!isEnoughStorage) {
+      const message = `There isn't enough free disk space to execute export`;
+      this.logger.error({
+        estimatesGpkgSize,
+        diskFreeSpace,
+        msg: message,
+      });
+      throw new InsufficientStorage(message);
+    }
+  }
+
+  @withSpanAsyncV4
   private async checkForExportCompleted(dupParams: JobExportDuplicationParams): Promise<CallbackExportResponse | undefined> {
     this.logger.info({ ...dupParams, roi: undefined, msg: `Checking for COMPLETED duplications with parameters` });
     const responseJob = await this.jobManagerClient.findExportJob(OperationStatus.COMPLETED, dupParams);
@@ -114,7 +141,7 @@ export class ValidationManager {
   @withSpanAsyncV4
   private async checkForExportProcessing(
     dupParams: JobExportDuplicationParams,
-    newCallbacks?: CallbacksTargetArray
+    newCallbacks?: CallbackUrlsTargetArray
   ): Promise<ICreateExportJobResponse | undefined> {
     this.logger.info({ ...dupParams, roi: undefined, msg: `Checking for PROCESSING duplications with parameters` });
     const processingJob =
@@ -122,7 +149,6 @@ export class ValidationManager {
       (await this.jobManagerClient.findExportJob(OperationStatus.PENDING, dupParams, true));
     if (processingJob) {
       await this.updateExportCallbackURLs(processingJob, newCallbacks);
-      console.log(processingJob.status === OperationStatus.PENDING);
       return {
         jobId: processingJob.id,
         taskIds: (processingJob.tasks as unknown as JobExportResponse[]).map((t) => t.id),
@@ -132,26 +158,18 @@ export class ValidationManager {
   }
 
   @withSpanAsyncV4
-  private async updateExportCallbackURLs(processingJob: JobExportResponse, newCallbacks?: CallbacksTargetArray): Promise<void> {
+  private async updateExportCallbackURLs(processingJob: JobExportResponse, newCallbacks?: CallbackUrlsTargetArray): Promise<void> {
     if (!newCallbacks) {
       return;
     }
 
-    if (!processingJob.parameters.exportInputParams.callbacks) {
-      processingJob.parameters.exportInputParams.callbacks = newCallbacks;
+    if (!processingJob.parameters.exportInputParams.callbackUrls) {
+      processingJob.parameters.exportInputParams.callbackUrls = newCallbacks;
     } else {
-      const callbacks = processingJob.parameters.exportInputParams.callbacks;
+      const callbacks = processingJob.parameters.exportInputParams.callbackUrls;
       for (const newCallback of newCallbacks) {
-        const hasCallback = callbacks.findIndex((callback) => {
-          const exist = callback.url === newCallback.url;
-          if (!exist) {
-            return false;
-          }
-          const sameROI = featureCollectionBooleanEqual(callback.roi, newCallback.roi);
-          return sameROI;
-        });
-        // eslint-disable-next-line @typescript-eslint/no-magic-numbers
-        if (hasCallback === -1) {
+        const hasCallback = callbacks.some((callbackUrls) => callbackUrls.url === newCallback.url);
+        if (!hasCallback) {
           callbacks.push(newCallback);
         }
       }
@@ -159,5 +177,24 @@ export class ValidationManager {
     await this.jobManagerClient.updateJob<ExportJobParameters>(processingJob.id, {
       parameters: processingJob.parameters,
     });
+  }
+
+  @withSpanAsyncV4
+  private async getFreeStorage(gpkgsLocation: string): Promise<number> {
+    const storageStatus: IStorageStatusResponse = await getStorageStatus(gpkgsLocation);
+    let otherRunningJobsSize = 0;
+
+    const processingJobs: JobExportResponse[] | undefined = await this.jobManagerClient.findAllProcessingExportJobs();
+    processingJobs.forEach((job) => {
+      let jobGpkgEstimatedSize = job.parameters.additionalParams.gpkgEstimatedSize;
+      if (job.percentage) {
+        // eslint-disable-next-line @typescript-eslint/no-magic-numbers
+        jobGpkgEstimatedSize = (1 - job.percentage / 100) * jobGpkgEstimatedSize; // the needed size that left for this gpkg creation
+      }
+      otherRunningJobsSize += jobGpkgEstimatedSize;
+    });
+    const actualFreeSpace = storageStatus.free - otherRunningJobsSize * this.storageEstimation.storageFactorBuffer;
+    this.logger.debug({ freeSpace: actualFreeSpace, totalSpace: storageStatus.size }, `Current storage free space for gpkgs location`);
+    return actualFreeSpace;
   }
 }

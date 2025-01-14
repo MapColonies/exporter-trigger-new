@@ -1,5 +1,5 @@
 import { type ConfigInstance, config } from '@map-colonies/config';
-import { commonBoilerplateV1, commonBoilerplateV2, commonBoilerplateV2Type, type commonBoilerplateV1Type } from '@map-colonies/schemas';
+import { commonBoilerplateV2, commonBoilerplateV2Type } from '@map-colonies/schemas';
 
 // Choose here the type of the config instance and import this type from the entire application
 type ConfigType = ConfigInstance<commonBoilerplateV2Type>;

@@ -1,10 +1,10 @@
 import { inject, injectable } from 'tsyringe';
 import config from 'config';
 import { Logger } from '@map-colonies/js-logger';
-import { IFindJobsRequest, JobManagerClient, OperationStatus } from '@map-colonies/mc-priority-queue';
+import { IFindJobsByCriteriaBody, IFindJobsRequest, JobManagerClient, OperationStatus } from '@map-colonies/mc-priority-queue';
 import { getUTCDate, IHttpRetryConfig } from '@map-colonies/mc-utils';
 import { Tracer } from '@opentelemetry/api';
-import { withSpanAsyncV4 } from '@map-colonies/telemetry';
+import { withSpanAsyncV4, withSpanV4 } from '@map-colonies/telemetry';
 import { ExportJobParameters, JobExportResponse } from '@map-colonies/raster-shared';
 import {
   CreateExportJobBody,
@@ -106,18 +106,16 @@ export class JobManagerWrapper extends JobManagerClient {
     const jobParameters: ExportJobParameters = {
       exportInputParams: {
         roi: data.roi,
-        callbacks: data.callbacks,
-        crs:
-          data.crs === 'EPSG:4326'
-            ? data.crs
-            : (() => {
-                throw new Error('Invalid CRS');
-              })(),
+        callbackUrls: data.callbacks,
+        crs: data.crs,
       },
       additionalParams: {
         fileNamesTemplates: data.fileNamesTemplates,
         relativeDirectoryPath: data.relativeDirectoryPath,
         packageRelativePath: data.packageRelativePath,
+        gpkgEstimatedSize: data.gpkgEstimatedSize,
+        targetFormat: data.targetFormat,
+        outputFormatStrategy: data.outputFormatStrategy,
       },
     };
 
@@ -152,12 +150,20 @@ export class JobManagerWrapper extends JobManagerClient {
   }
 
   @withSpanAsyncV4
-  private async getExportJobs(queryParams: IFindJobsRequest): Promise<JobExportResponse[] | undefined> {
-    this.logger.debug({ ...queryParams }, `Getting jobs that match these parameters`);
-    const jobs = await this.get<JobExportResponse[] | undefined>('/jobs', queryParams as unknown as Record<string, unknown>);
+  public async findAllProcessingExportJobs(shouldReturnTasks = false): Promise<JobExportResponse[]> {
+    const criteria: IFindJobsByCriteriaBody = {
+      isCleaned: false,
+      types: [this.tilesJobType],
+      shouldReturnTasks,
+      statuses: [OperationStatus.IN_PROGRESS, OperationStatus.PENDING],
+    };
+
+    this.logger.debug({ ...criteria }, `Getting processing export jobs `);
+    const jobs = await this.post<JobExportResponse[]>('/jobs/find', criteria);
     return jobs;
   }
 
+  @withSpanV4
   private findExportJobWithMatchingParams(jobs: JobExportResponse[], jobParams: JobExportDuplicationParams): JobExportResponse | undefined {
     const matchingJob = jobs.find(
       (job) =>
@@ -167,5 +173,12 @@ export class JobManagerWrapper extends JobManagerClient {
         checkFeatures(job.parameters.exportInputParams.roi, jobParams.roi)
     );
     return matchingJob;
+  }
+
+  @withSpanAsyncV4
+  private async getExportJobs(queryParams: IFindJobsRequest): Promise<JobExportResponse[] | undefined> {
+    this.logger.debug({ ...queryParams }, `Getting jobs that match these parameters`);
+    const jobs = await this.get<JobExportResponse[] | undefined>('/jobs', queryParams as unknown as Record<string, unknown>);
+    return jobs;
   }
 }

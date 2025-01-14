@@ -1,6 +1,6 @@
-import { IRasterCatalogUpsertRequestBody, LayerData, LayerMetadata, Link, ProductType, TileOutputFormat } from '@map-colonies/mc-model-types';
+import { IRasterCatalogUpsertRequestBody, ProductType } from '@map-colonies/mc-model-types';
 import { ICreateJobBody, IJobResponse, OperationStatus } from '@map-colonies/mc-priority-queue';
-import { CallbacksTargetArray, ExportJobParameters, LinksDefinition, TileFormatStrategy } from '@map-colonies/raster-shared';
+import { CallbackUrlsTargetArray, ExportJobParameters, LinksDefinition, TileFormatStrategy, TileOutputFormat } from '@map-colonies/raster-shared';
 import { BBox, FeatureCollection, Geometry } from 'geojson';
 
 export interface IConfig {
@@ -73,7 +73,7 @@ export interface ITaskParameters {
 export interface IExportInitRequest {
   crs: string;
   roi: FeatureCollection;
-  callbacks?: CallbacksTargetArray;
+  callbacks?: CallbackUrlsTargetArray;
   fileNamesTemplates: LinksDefinition;
   relativeDirectoryPath: string;
   dbId: string;
@@ -82,9 +82,16 @@ export interface IExportInitRequest {
   cswProductId: string;
   productType: ProductType;
   packageRelativePath: string;
-  targetFormat?: TileOutputFormat;
-  outputFormatStrategy?: TileFormatStrategy;
+  gpkgEstimatedSize: number;
+  targetFormat: TileOutputFormat;
+  outputFormatStrategy: TileFormatStrategy;
   description?: string;
 }
 
 export type CreateExportJobBody = ICreateJobBody<ExportJobParameters, ITaskParameters>;
+
+export interface IStorageEstimation {
+  jpegTileEstimatedSizeInBytes: number;
+  pngTileEstimatedSizeInBytes: number;
+  storageFactorBuffer: number;
+}

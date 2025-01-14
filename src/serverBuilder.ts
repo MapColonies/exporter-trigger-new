@@ -48,8 +48,8 @@ export class ServerBuilder {
 
   private buildRoutes(): void {
     this.serverInstance.use('/storage', this.createStorageRouter);
-    this.serverInstance.use('/', this.tasksRouter);
-    this.serverInstance.use('/create', this.createPackageRouter);
+    this.serverInstance.use('/tasks', this.tasksRouter);
+    this.serverInstance.use('/export', this.createPackageRouter);
     this.buildDocsRoutes();
   }
 

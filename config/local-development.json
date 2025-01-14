@@ -35,6 +35,11 @@
       }
     }
   },
+  "storageEstimation": {
+    "jpegTileEstimatedSizeInBytes": 12500,
+    "pngTileEstimatedSizeInBytes": 12500,
+    "storageFactorBuffer": 1.25
+  },
   "cleanupExpirationDays": 30,
   "externalClientsConfig": {
     "clientsUrls": {
