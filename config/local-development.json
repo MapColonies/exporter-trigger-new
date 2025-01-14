@@ -7,14 +7,13 @@
     "uiPath": "/api"
   },
   "telemetry": {
-    "tracing": {
-      "isEnabled": false,
-      "url": "http://localhost:4318/v1/traces"
-    },
-    "shared": {},
     "logger": {
       "level": "info",
       "prettyPrint": false
+    },
+    "tracing": {
+      "isEnabled": false,
+      "url": "http://localhost:4318/v1/traces"
     },
     "metrics": {
       "enabled": false,
@@ -23,7 +22,7 @@
     }
   },
   "server": {
-    "port": 8080,
+    "port": 8083,
     "request": {
       "payload": {
         "limit": "1mb"
@@ -45,10 +44,10 @@
   "externalClientsConfig": {
     "clientsUrls": {
       "jobManager": {
-        "url": "http://job-manager"
+        "url": "https://common-job-manager-route-raster-dev.apps.j1lk3njp.eastus.aroapp.io"
       },
       "rasterCatalogManager": {
-        "url": "http://raster-catalog-manager"
+        "url": "https://raster-core-dev-raster-catalog-manager-route-raster-dev.apps.j1lk3njp.eastus.aroapp.io"
       }
     },
     "httpRetry": {
@@ -58,8 +57,9 @@
     },
     "disableHttpClientLogs": false
   },
-  "tilesProvider": "S3",
+  "tilesProvider": "FS",
   "gpkgsLocation": "/app/tiles_outputs/gpkgs",
+  "downloadServerUrl": "https://download-dev.mapcolonies.net/api/raster/v1",
   "jobDefinitions": {
     "tasks": {
       "init": {

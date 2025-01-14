@@ -1,4 +1,5 @@
 {
+  "domain": "JOB_DOMAIN",
   "openapiConfig": {
     "filePath": "OPENAPI_FILE_PATH"
   },
@@ -38,5 +39,70 @@
         }
       }
     }
+  },
+  "jobDefinitions": {
+    "jobs": {
+      "export": {
+        "type": "EXPORT_JOB_TYPE"
+      }
+    },
+    "tasks": {
+      "init": {
+        "type": "INIT_TASK_TYPE"
+      }
+    }
+  },
+  "storageEstimation": {
+    "jpegTileEstimatedSizeInBytes": {
+      "__name": "JPEG_TILE_ESTIMATED_SIZE_IN_BYTES",
+      "__format": "number"
+    },
+    "pngTileEstimatedSizeInBytes": {
+      "__name": "PNG_TILE_ESTIMATED_SIZE_IN_BYTES",
+      "__format": "number"
+    },
+    "storageFactorBuffer": {
+      "__name": "STORAGE_FACTOR_BUFFER",
+      "__format": "number"
+    }
+  },
+  "cleanupExpirationDays": {
+    "__name": "CLEANUP_EXPIRATION_DAYS",
+    "__format": "number"
+  },
+  "tilesProvider": "TILES_PROVIDER",
+  "gpkgsLocation": "GPKGS_LOCATION",
+  "externalClientsConfig": {
+    "clientsUrls": {
+      "jobManager": {
+        "url": "JOB_MANAGER_URL"
+      },
+      "rasterCatalogManager": {
+        "url": "RASTER_CATALOG_MANAGER_URL"
+      }
+    },
+    "httpRetry": {
+      "attempts": {
+        "__name": "HTTP_RETRY_ATTEMPTS",
+        "__format": "number"
+      },
+      "delay": "HTTP_RETRY_DELAY",
+      "shouldResetTimeout": {
+        "__name": "HTTP_RETRY_SHOULD_RESET_TIMEOUT",
+        "__format": "boolean"
+      }
+    },
+    "disableHttpClientLogs": {
+      "__name": "DISABLE_HTTP_CLIENT_LOGS",
+      "__format": "boolean"
+    }
+  },
+  "roiBufferMeter": {
+    "__name": "ROI_BUFFER_METER",
+    "__format": "number"
+  },
+  "minContainedPercentage": {
+    "__name": "MIN_CONTAINED_PERCENTAGE",
+    "__format": "number"
   }
 }
