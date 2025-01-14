@@ -41,7 +41,7 @@
     "@map-colonies/openapi-express-viewer": "^3.0.0",
     "@map-colonies/raster-shared": "file:../../general/raster-shared/map-colonies-raster-shared-1.0.3.tgz",
     "@map-colonies/read-pkg": "0.0.1",
-    "@map-colonies/schemas": "file:../../general/schemas/map-colonies-schemas-1.1.0.tgz",
+    "@map-colonies/schemas": "v1.2.0",
     "@map-colonies/telemetry": "^7.0.1",
     "@mapbox/geojsonhint": "^3.3.0",
     "@opentelemetry/api": "^1.7.0",
