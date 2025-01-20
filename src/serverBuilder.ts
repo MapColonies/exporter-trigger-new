@@ -13,7 +13,7 @@ import { ConfigType } from '@common/config';
 import { SERVICES } from '@common/constants';
 import { STORAGE_ROUTER_SYMBOL } from './storage/routes/storageRouter';
 import { EXPORT_STATUS_ROUTER_SYMBOL } from './tasks/routes/tasksRouter';
-import { CREATE_PACKAGE_ROUTER_SYMBOL } from './export/routes/exportRouter';
+import { EXPORT_ROUTER_SYMBOL } from './export/routes/exportRouter';
 
 @injectable()
 export class ServerBuilder {
@@ -24,7 +24,7 @@ export class ServerBuilder {
     @inject(SERVICES.LOGGER) private readonly logger: Logger,
     @inject(STORAGE_ROUTER_SYMBOL) private readonly createStorageRouter: Router,
     @inject(EXPORT_STATUS_ROUTER_SYMBOL) private readonly tasksRouter: Router,
-    @inject(CREATE_PACKAGE_ROUTER_SYMBOL) private readonly createPackageRouter: Router
+    @inject(EXPORT_ROUTER_SYMBOL) private readonly createPackageRouter: Router
   ) {
     this.serverInstance = express();
   }

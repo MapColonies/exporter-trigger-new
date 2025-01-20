@@ -6,11 +6,11 @@ const exportRouterFactory: FactoryFunction<Router> = (dependencyContainer) => {
   const router = Router();
   const controller = dependencyContainer.resolve(ExportController);
 
-  router.post('/', controller.createPackageRoi);
+  router.post('/', controller.createExport);
 
   return router;
 };
 
-export const CREATE_PACKAGE_ROUTER_SYMBOL = Symbol('createPackageFactory');
+export const EXPORT_ROUTER_SYMBOL = Symbol('exportRouter');
 
-export { exportRouterFactory as createPackageRouterFactory };
+export { exportRouterFactory };

@@ -43,7 +43,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/createRoiGpkgJobResponse'
+                  - $ref: '#/components/schemas/createExportJobResponse'
                   - $ref: '#/components/schemas/exportNaiveCacheJobResponse'
                 discriminator:
                   propertyName: response
@@ -146,6 +146,7 @@ components:
           enum:
             - In-Progress
             - Completed
+            - Pending
       discriminator:
         propertyName: response
     exportFromFeatures:
@@ -218,7 +219,7 @@ components:
       required:
         - id
         - taskIds
-    createRoiGpkgJobResponse:
+    createExportJobResponse:
       allOf:
         - $ref: '#/components/schemas/CommonResponse'
       type: object

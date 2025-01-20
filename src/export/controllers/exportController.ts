@@ -16,7 +16,7 @@ export class ExportController {
     @inject(ExportManager) private readonly manager: ExportManager
   ) {}
 
-  public createPackageRoi: CreateExportHandler = async (req, res, next) => {
+  public createExport: CreateExportHandler = async (req, res, next) => {
     const userInput: ICreateExportRequest = req.body;
     try {
       this.logger.debug(userInput, `Creating package with user input`);

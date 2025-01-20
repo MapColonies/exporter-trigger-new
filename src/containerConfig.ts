@@ -9,7 +9,7 @@ import { getTracing } from '@common/tracing';
 import { getConfig } from './common/config';
 import { STORAGE_ROUTER_SYMBOL, storageRouterFactory } from './storage/routes/storageRouter';
 import { EXPORT_STATUS_ROUTER_SYMBOL, exportStatusRouterFactory } from './tasks/routes/tasksRouter';
-import { CREATE_PACKAGE_ROUTER_SYMBOL, createPackageRouterFactory } from './export/routes/exportRouter';
+import { EXPORT_ROUTER_SYMBOL, exportRouterFactory } from './export/routes/exportRouter';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
@@ -35,7 +35,7 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
     { token: SERVICES.METER, provider: { useValue: OtelMetrics.getMeterProvider().getMeter(SERVICE_NAME) } },
     { token: STORAGE_ROUTER_SYMBOL, provider: { useFactory: storageRouterFactory } },
     { token: EXPORT_STATUS_ROUTER_SYMBOL, provider: { useFactory: exportStatusRouterFactory } },
-    { token: CREATE_PACKAGE_ROUTER_SYMBOL, provider: { useFactory: createPackageRouterFactory } },
+    { token: EXPORT_ROUTER_SYMBOL, provider: { useFactory: exportRouterFactory } },
     {
       token: 'onSignal',
       provider: {

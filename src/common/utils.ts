@@ -3,10 +3,8 @@ import { FeatureCollection } from 'geojson';
 import { bboxToTileRange, degreesPerPixelToZoomLevel, ITileRange, zoomLevelToResolutionMeter } from '@map-colonies/mc-utils';
 import { TileOutputFormat } from '@map-colonies/raster-shared';
 import config from 'config';
-import { container } from 'tsyringe';
-import { Logger } from '@map-colonies/js-logger';
 import { IGeometryRecord, IStorageStatusResponse } from './interfaces';
-import { SERVICES, ZOOM_ZERO_RESOLUTION } from './constants';
+import { ZOOM_ZERO_RESOLUTION } from './constants';
 
 export const getStorageStatus = async (gpkgsLocation: string): Promise<IStorageStatusResponse> => {
   return checkDiskSpace(gpkgsLocation);
@@ -59,14 +57,14 @@ export const calculateEstimateGpkgSize = (featuresRecords: IGeometryRecord[], ti
 export const getTileEstimatedSize = (tileOutputFormat: TileOutputFormat): number => {
   const jpegTileEstimatedSizeInBytes = config.get<number>('storageEstimation.jpegTileEstimatedSizeInBytes');
   const pngTileEstimatedSizeInBytes = config.get<number>('storageEstimation.pngTileEstimatedSizeInBytes');
-  const logger = container.resolve<Logger>(SERVICES.LOGGER);
+  //const logger = container.resolve<Logger>(SERVICES.LOGGER);
   let tileEstimatedSize;
   if (tileOutputFormat === TileOutputFormat.JPEG) {
     tileEstimatedSize = jpegTileEstimatedSizeInBytes;
   } else {
     tileEstimatedSize = pngTileEstimatedSizeInBytes;
   }
-  logger.debug(`single tile size defined as ${tileOutputFormat} from configuration: ${tileEstimatedSize} bytes`);
+  //logger.debug(`single tile size defined as ${tileOutputFormat} from configuration: ${tileEstimatedSize} bytes`);
 
   return tileEstimatedSize;
 };

@@ -1,3 +1,4 @@
+import { zoomLevelToResolutionDeg } from '@map-colonies/mc-utils';
 import { readPackageJsonSync } from '@map-colonies/read-pkg';
 
 export const SERVICE_NAME = readPackageJsonSync().name ?? 'unknown_service';
@@ -17,4 +18,4 @@ export const SERVICES = {
 
 export const DEFAULT_PRIORITY = 1000;
 export const DEFAULT_CRS = 'EPSG:4326';
-export const ZOOM_ZERO_RESOLUTION = 0.703125;
+export const ZOOM_ZERO_RESOLUTION = zoomLevelToResolutionDeg(0) as number;
