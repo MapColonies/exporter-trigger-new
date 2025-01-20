@@ -73,6 +73,11 @@ const registerDefaultConfig = (): void => {
     tilesProvider: 'S3',
     gpkgsLocation: '/app/tiles_outputs/gpkgs',
     cleanupExpirationDays: 30,
+    storageEstimation: {
+      jpegTileEstimatedSizeInBytes: 12500,
+      pngTileEstimatedSizeInBytes: 12500,
+      storageFactorBuffer: 1.25,
+    },
     externalClientsConfig: {
       clientsUrls: {
         jobManager: {
