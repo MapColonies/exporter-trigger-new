@@ -1,12 +1,18 @@
 import { Logger } from '@map-colonies/js-logger';
 import { Tracer } from '@opentelemetry/api';
 import { withSpanAsyncV4, withSpanV4 } from '@map-colonies/telemetry';
-import type { FeatureCollection, MultiPolygon, Polygon } from 'geojson';
+import type { MultiPolygon, Polygon } from 'geojson';
 import { inject, injectable } from 'tsyringe';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
 import { BadRequestError, InsufficientStorage } from '@map-colonies/error-types';
 import { LayerMetadata } from '@map-colonies/mc-model-types';
-import { CallbackExportResponse, CallbackUrlsTargetArray, ExportJobParameters, JobExportResponse } from '@map-colonies/raster-shared';
+import {
+  CallbackExportResponse,
+  CallbackUrlsTargetArray,
+  ExportJobParameters,
+  JobExportResponse,
+  RoiFeatureCollection,
+} from '@map-colonies/raster-shared';
 import { getStorageStatus } from '@src/common/utils';
 import { SERVICES } from '../../common/constants';
 import { JobManagerWrapper } from '../../clients/jobManagerWrapper';
@@ -46,7 +52,7 @@ export class ValidationManager {
     resourceId: string,
     version: string,
     dbId: string,
-    roi: FeatureCollection,
+    roi: RoiFeatureCollection,
     crs: string,
     callbackUrls?: CallbackUrlsTargetArray
   ): Promise<CallbackExportResponse | ICreateExportJobResponse | undefined> {
