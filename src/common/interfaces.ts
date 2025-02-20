@@ -40,8 +40,6 @@ export interface IJobStatusResponse {
   status: OperationStatus;
 }
 
-export type GetJobResponse = IJobResponse<unknown, unknown>;
-
 export type LayerInfo = Required<IRasterCatalogUpsertRequestBody>;
 
 export interface IGeometryRecordBase {

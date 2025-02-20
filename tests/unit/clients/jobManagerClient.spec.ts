@@ -61,18 +61,25 @@ describe('JobManagerClient', () => {
   describe('findExportJob', () => {
     it('should return completed job for export request', async () => {
       get = jest.fn();
-      (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(completedJobResponse);
+      (jobManagerClient as unknown as { get: unknown }).get = get
+        .mockResolvedValueOnce(completedJobResponse)
+        .mockResolvedValueOnce(completedJobResponse[0])
+        .mockResolvedValueOnce(completedJobResponse[1]);
+
       const response = await jobManagerClient.findExportJob(OperationStatus.COMPLETED, duplicationParams);
-      expect(get).toHaveBeenCalledTimes(1);
+      expect(get).toHaveBeenCalledTimes(3);
       expect(response).toEqual(completedJobResponse[0]);
     });
 
     it('should return undefined on roi not contained in a completed job', async () => {
       const notContainedDuplicationParams: JobExportDuplicationParams = { ...duplicationParams, roi: notContainedRoi };
       get = jest.fn();
-      (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(completedJobResponse);
+      (jobManagerClient as unknown as { get: unknown }).get = get
+        .mockResolvedValueOnce(completedJobResponse)
+        .mockResolvedValueOnce(completedJobResponse[0])
+        .mockResolvedValueOnce(completedJobResponse[1]);
       const response = await jobManagerClient.findExportJob(OperationStatus.COMPLETED, notContainedDuplicationParams);
-      expect(get).toHaveBeenCalledTimes(1);
+      expect(get).toHaveBeenCalledTimes(3);
       expect(response).toBeUndefined();
     });
 
@@ -120,7 +127,7 @@ describe('JobManagerClient', () => {
         (jobManagerClient as unknown as { createJob: unknown }).createJob = createJob.mockResolvedValue(createJobResponse);
 
         const result = await jobManagerClient.createExportJob(createExportData);
-        expect(result).toEqual({ jobId: createJobResponse.id, taskIds: createJobResponse.taskIds, status: OperationStatus.PENDING });
+        expect(result).toEqual({ jobId: createJobResponse.id, status: OperationStatus.PENDING });
         expect(createJob).toHaveBeenCalledWith(generateCreateJobRequest(createExportData));
       });
     });

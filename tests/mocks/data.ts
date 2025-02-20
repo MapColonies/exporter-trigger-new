@@ -1,20 +1,22 @@
 /* eslint-disable @typescript-eslint/no-magic-numbers */
-import { ProductType, RecordType } from '@map-colonies/mc-model-types';
-import { BBox, FeatureCollection, Polygon } from 'geojson';
+import { RecordType } from '@map-colonies/mc-model-types';
+import { BBox, Polygon } from 'geojson';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
-import { TileOutputFormat, Transparency } from '@map-colonies/raster-shared';
-import { ICreateExportJobResponse, ICreateExportRequest, IGeometryRecord, JobExportDuplicationParams } from '../../src/common/interfaces';
+import { RasterProductTypes, RoiFeatureCollection, TileOutputFormat, Transparency } from '@map-colonies/raster-shared';
+import { ICreateExportJobResponse, IGeometryRecord, JobExportDuplicationParams } from '../../src/common/interfaces';
+import { CreateExportRequest } from '@src/utils/zod/schemas';
 
 const dbId = '8b867544-2dab-43a1-be6e-f23ec83c19b4';
 const crs = 'EPSG:4326';
 
-const defaultRoi: FeatureCollection = {
+const defaultRoi: RoiFeatureCollection = {
   type: 'FeatureCollection',
   features: [
     {
       type: 'Feature',
       properties: {
         maxResolutionDeg: 0.703125,
+        minResolutionDeg: 0.703125,
       },
       geometry: {
         type: 'Polygon',
@@ -32,13 +34,14 @@ const defaultRoi: FeatureCollection = {
   ],
 };
 
-const notIntersectedPolygon: FeatureCollection = {
+const notIntersectedPolygon: RoiFeatureCollection = {
   type: 'FeatureCollection',
   features: [
     {
       type: 'Feature',
       properties: {
         maxResolutionDeg: 0.703125,
+        minResolutionDeg: 0.703125,
       },
       geometry: {
         type: 'Polygon',
@@ -107,7 +110,7 @@ export const layerInfo = {
     region: ['string'],
     productId: 'SOME_NAME',
     productVersion: '1.0',
-    productType: ProductType.ORTHOPHOTO,
+    productType: RasterProductTypes.ORTHOPHOTO,
     productSubType: 'string',
     srsName: 'WGS84GEO',
     maxResolutionDeg: 0.703125,
@@ -138,18 +141,18 @@ export const layerInfo = {
     },
     productBoundingBox: '34.851494432799569,32.294309558054238,34.868241571129118,32.305431922834430',
     displayPath: 'f76fde12-121d-4b66-b5b9-732ef92e2eda',
-    transparency: Transparency.Transparent,
+    transparency: Transparency.TRANSPARENT,
     tileMimeFormat: 'image/png',
     tileOutputFormat: TileOutputFormat.PNG,
   },
 };
 
-export const fcTooHighResolution: FeatureCollection = {
+export const fcTooHighResolution: RoiFeatureCollection = {
   type: 'FeatureCollection',
   features: [
     {
       type: 'Feature',
-      properties: { maxResolutionDeg: 0.000000335276126861572 },
+      properties: { maxResolutionDeg: 0.000000335276126861572, minResolutionDeg: 0.703125 },
       geometry: {
         coordinates: [
           [
@@ -166,12 +169,12 @@ export const fcTooHighResolution: FeatureCollection = {
   ],
 };
 
-export const fc1: FeatureCollection = {
+export const fc1: RoiFeatureCollection = {
   type: 'FeatureCollection',
   features: [
     {
       type: 'Feature',
-      properties: { maxResolutionDeg: 0.02197265625 },
+      properties: { maxResolutionDeg: 0.02197265625, minResolutionDeg: 0.703125 },
       geometry: {
         coordinates: [
           [
@@ -187,7 +190,7 @@ export const fc1: FeatureCollection = {
     },
     {
       type: 'Feature',
-      properties: { maxResolutionDeg: 0.02197265625 },
+      properties: { maxResolutionDeg: 0.02197265625, minResolutionDeg: 0.703125 },
       geometry: {
         coordinates: [
           [
@@ -295,30 +298,30 @@ export const dupParams = {
   crs,
 } as JobExportDuplicationParams;
 
-export const createExportRequestWithoutCallback: ICreateExportRequest = {
+export const createExportRequestWithoutCallback: CreateExportRequest = {
   dbId,
   crs,
   roi: defaultRoi,
 };
 
-export const createExportRequestNoRoiWithCallback: ICreateExportRequest = {
+export const createExportRequestNoRoiWithCallback: CreateExportRequest = {
   dbId,
   callbackURLs: ['http://callback1'],
 };
 
-export const createExportRequestWithRoiAndCallback: ICreateExportRequest = {
+export const createExportRequestWithRoiAndCallback: CreateExportRequest = {
   dbId,
   callbackURLs: ['http://example.getmap.com/callback', 'http://example.getmap.com/callback2'],
   roi: defaultRoi,
 };
 
-export const createExportRequestWithRoiAndNewCallback: ICreateExportRequest = {
+export const createExportRequestWithRoiAndNewCallback: CreateExportRequest = {
   dbId,
   callbackURLs: ['http://example.getmap.com/callback3'],
   roi: defaultRoi,
 };
 
-export const createExportInvalidMaxZoomLevel: ICreateExportRequest = {
+export const createExportInvalidMaxZoomLevel: CreateExportRequest = {
   dbId,
   crs,
   roi: {
@@ -328,6 +331,7 @@ export const createExportInvalidMaxZoomLevel: ICreateExportRequest = {
         type: 'Feature',
         properties: {
           maxResolutionDeg: 0.0439453125,
+          minResolutionDeg: 0.703125,
         },
         geometry: defaultRoi.features[0].geometry,
       },
@@ -335,7 +339,7 @@ export const createExportInvalidMaxZoomLevel: ICreateExportRequest = {
   },
 };
 
-export const createExportInvalidMinZoomLevel: ICreateExportRequest = {
+export const createExportInvalidMinZoomLevel: CreateExportRequest = {
   dbId,
   crs,
   roi: {
@@ -353,7 +357,7 @@ export const createExportInvalidMinZoomLevel: ICreateExportRequest = {
   },
 };
 
-export const createExportNotIntersectedPolygon: ICreateExportRequest = {
+export const createExportNotIntersectedPolygon: CreateExportRequest = {
   dbId,
   crs,
   roi: notIntersectedPolygon,
@@ -361,7 +365,6 @@ export const createExportNotIntersectedPolygon: ICreateExportRequest = {
 
 export const createExportResponse: ICreateExportJobResponse = {
   jobId: 'ef1a76e2-3a4b-49e6-90ee-e97c402dd3d8',
-  taskIds: ['0dece32e-b04e-41cb-b133-f4d1a7e960a4'],
   status: OperationStatus.PENDING,
 };
 
@@ -395,7 +398,7 @@ export const createExportResponse: ICreateExportJobResponse = {
 //   crs: 'EPSG:4326',
 // } as JobExportDuplicationParams;
 
-// export const createExportRequestWithoutCallback: ICreateExportRequest = {
+// export const createExportRequestWithoutCallback: CreateExportRequest = {
 //   dbId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
 //   crs: 'EPSG:4326',
 //   roi: {
@@ -423,24 +426,24 @@ export const createExportResponse: ICreateExportJobResponse = {
 //   },
 // };
 
-// export const createExportRequestNoRoiWithCallback: ICreateExportRequest = {
+// export const createExportRequestNoRoiWithCallback: CreateExportRequest = {
 //   dbId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
 //   callbackURLs: ['http://callback1'],
 // };
 
-// export const createExportRequestWithRoiAndCallback: ICreateExportRequest = {
+// export const createExportRequestWithRoiAndCallback: CreateExportRequest = {
 //   dbId: createExportRequestNoRoiWithCallback.dbId,
 //   callbackURLs: ['http://example.getmap.com/callback', 'http://example.getmap.com/callback2'],
 //   roi: createExportRequestWithoutCallback.roi,
 // };
 
-// export const createExportRequestWithRoiAndNewCallback: ICreateExportRequest = {
+// export const createExportRequestWithRoiAndNewCallback: CreateExportRequest = {
 //   dbId: createExportRequestNoRoiWithCallback.dbId,
 //   callbackURLs: ['http://example.getmap.com/callback3'],
 //   roi: createExportRequestWithoutCallback.roi,
 // };
 
-// export const createExportInvalidMaxZoomLevel: ICreateExportRequest = {
+// export const createExportInvalidMaxZoomLevel: CreateExportRequest = {
 //   dbId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
 //   crs: 'EPSG:4326',
 //   roi: {
@@ -468,7 +471,7 @@ export const createExportResponse: ICreateExportJobResponse = {
 //   },
 // };
 
-// export const createExportInvalidMinZoomLevel: ICreateExportRequest = {
+// export const createExportInvalidMinZoomLevel: CreateExportRequest = {
 //   dbId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
 //   crs: 'EPSG:4326',
 //   roi: {
@@ -497,7 +500,7 @@ export const createExportResponse: ICreateExportJobResponse = {
 //   },
 // };
 
-// export const createExportNotIntersectedPolygon: ICreateExportRequest = {
+// export const createExportNotIntersectedPolygon: CreateExportRequest = {
 //   dbId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
 //   crs: 'EPSG:4326',
 //   roi: {

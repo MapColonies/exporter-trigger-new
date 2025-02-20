@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-magic-numbers */
-import { ProductType, TileOutputFormat } from '@map-colonies/mc-model-types';
 import { ICreateJobResponse, OperationStatus } from '@map-colonies/mc-priority-queue';
-import { JobExportResponse, TileFormatStrategy } from '@map-colonies/raster-shared';
-import { FeatureCollection } from 'geojson';
+import { JobExportResponse, RasterProductTypes, RoiFeatureCollection, TileFormatStrategy, TileOutputFormat } from '@map-colonies/raster-shared';
 import { CreateExportJobBody, IExportInitRequest, IJobStatusResponse, JobExportDuplicationParams } from '../../../src/common/interfaces';
 import { inProgressJobsResponse } from '../requestMocks/processingRequest';
 
@@ -50,6 +48,7 @@ export const inProgressJobResponse: JobExportResponse = {
             },
             properties: {
               maxResolutionDeg: 0.703125,
+              minResolutionDeg: 0.703125,
             },
           },
         ],
@@ -96,6 +95,7 @@ export const duplicationParams: JobExportDuplicationParams = {
         type: 'Feature',
         properties: {
           maxResolutionDeg: 0.703125,
+          minResolutionDeg: 0.703125,
         },
         geometry: {
           type: 'Polygon',
@@ -114,13 +114,14 @@ export const duplicationParams: JobExportDuplicationParams = {
   crs: 'EPSG:4326',
 };
 
-export const notContainedRoi: FeatureCollection = {
+export const notContainedRoi: RoiFeatureCollection = {
   type: 'FeatureCollection',
   features: [
     {
       type: 'Feature',
       properties: {
         maxResolutionDeg: 0.703125,
+        minResolutionDeg: 0.703125,
       },
       geometry: {
         type: 'Polygon',
@@ -299,7 +300,7 @@ export const completedJobResponse = [
             },
           ],
         },
-        jobId: '8eddc842-64ee-4e90-b3a5-b10d9e86acb2',
+        jobId: '8eddc842-64ee-4e90-b3a5-b10d9e86acb1',
         links: {
           dataURI: 'http://download-service/downloads/63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_22_56_272Z.gpkg',
           metadataURI:
@@ -402,6 +403,7 @@ export const createExportData: IExportInitRequest = {
         type: 'Feature',
         properties: {
           maxResolutionDeg: 0.703125,
+          minResolutionDeg: 0.703125,
         },
         geometry: {
           type: 'Polygon',
@@ -435,7 +437,7 @@ export const createExportData: IExportInitRequest = {
   dbId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
   version: '1.0',
   cswProductId: 'SOME_NAME',
-  productType: ProductType.ORTHOPHOTO,
+  productType: RasterProductTypes.ORTHOPHOTO,
   priority: 0,
   description: 'This is roi exporting example',
   targetFormat: TileOutputFormat.PNG,
@@ -534,7 +536,7 @@ export const initExportRequestBody = {
     },
   },
   internalId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
-  productType: ProductType.ORTHOPHOTO,
+  productType: RasterProductTypes.ORTHOPHOTO,
   productName: 'SOME_NAME',
   priority: 1000,
   description: undefined,
