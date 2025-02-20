@@ -8,7 +8,6 @@ import { withSpanAsyncV4, withSpanV4 } from '@map-colonies/telemetry';
 import { ExportJobParameters } from '@map-colonies/raster-shared';
 import {
   CreateExportJobBody,
-  GetJobResponse,
   ICreateExportJobResponse,
   IExportInitRequest,
   ITaskParameters,
@@ -18,7 +17,6 @@ import {
 import { SERVICES } from '../common/constants';
 import { checkFeatures } from '../utils/geometry';
 
-//TODO: GetJobResponse from raster-shared
 @injectable()
 export class JobManagerWrapper extends JobManagerClient {
   private readonly tilesJobType: string;
@@ -43,8 +41,9 @@ export class JobManagerWrapper extends JobManagerClient {
   }
 
   @withSpanAsyncV4
-  public async getJobByJobId(jobId: string): Promise<GetJobResponse> {
-    const job = await this.get<GetJobResponse>(`/jobs/${jobId}`);
+  public async getJobByJobId(jobId: string): Promise<JobExportResponse> {
+    this.logger.debug({ msg: `Getting export job by id`, jobId });
+    const job = await this.get<JobExportResponse>(`/jobs/${jobId}`);
     return job;
   }
 
@@ -180,16 +179,9 @@ export class JobManagerWrapper extends JobManagerClient {
     this.logger.debug({ ...queryParams }, `Getting jobs that match these parameters`);
     const jobs = await this.get<JobExportResponse[] | undefined>('/jobs', queryParams as unknown as Record<string, unknown>);
     if (jobs) {
-      const jobsWithParams = await Promise.all(jobs.map(async (job) => this.getExportJobById(job.id)));
+      const jobsWithParams = await Promise.all(jobs.map(async (job) => this.getJobByJobId(job.id)));
       return jobsWithParams;
     }
     return jobs;
-  }
-
-  @withSpanAsyncV4
-  private async getExportJobById(jobId: string): Promise<JobExportResponse> {
-    this.logger.debug({ msg: `Getting export job by id`, jobId });
-    const job = await this.get<JobExportResponse>(`/jobs/${jobId}`);
-    return job;
   }
 }
