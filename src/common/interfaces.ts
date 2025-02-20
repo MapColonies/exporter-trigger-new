@@ -1,7 +1,15 @@
-import { IRasterCatalogUpsertRequestBody, ProductType } from '@map-colonies/mc-model-types';
+import { IRasterCatalogUpsertRequestBody } from '@map-colonies/mc-model-types';
 import { ICreateJobBody, IJobResponse, OperationStatus } from '@map-colonies/mc-priority-queue';
-import { CallbackUrlsTargetArray, ExportJobParameters, LinksDefinition, TileFormatStrategy, TileOutputFormat } from '@map-colonies/raster-shared';
-import { BBox, FeatureCollection, Geometry } from 'geojson';
+import {
+  CallbackUrlsTargetArray,
+  ExportJobParameters,
+  LinksDefinition,
+  RasterProductTypes,
+  RoiFeatureCollection,
+  TileFormatStrategy,
+  TileOutputFormat,
+} from '@map-colonies/raster-shared';
+import { BBox, Geometry } from 'geojson';
 
 export interface IConfig {
   get: <T>(setting: string) => T;
@@ -15,20 +23,11 @@ export interface OpenApiConfig {
   uiPath: string;
 }
 
-export interface ICreateExportRequest {
-  dbId: string;
-  crs?: string;
-  priority?: number;
-  roi?: FeatureCollection;
-  callbackURLs?: string[];
-  description?: string;
-}
-
 export interface ICreateExportJobResponse {
   jobId: string;
-  taskIds: string[];
   status: OperationStatus.PENDING | OperationStatus.COMPLETED | OperationStatus.IN_PROGRESS;
   isDuplicated?: boolean;
+  percentage?: number;
 }
 
 export interface IStorageStatusResponse {
@@ -63,7 +62,7 @@ export interface JobExportDuplicationParams {
   version: string;
   dbId: string;
   crs: string;
-  roi: FeatureCollection;
+  roi: RoiFeatureCollection;
 }
 
 export interface ITaskParameters {
@@ -72,7 +71,7 @@ export interface ITaskParameters {
 
 export interface IExportInitRequest {
   crs: string;
-  roi: FeatureCollection;
+  roi: RoiFeatureCollection;
   callbacks?: CallbackUrlsTargetArray;
   fileNamesTemplates: LinksDefinition;
   relativeDirectoryPath: string;
@@ -80,7 +79,7 @@ export interface IExportInitRequest {
   priority?: number;
   version: string;
   cswProductId: string;
-  productType: ProductType;
+  productType: RasterProductTypes;
   packageRelativePath: string;
   gpkgEstimatedSize: number;
   targetFormat: TileOutputFormat;
@@ -95,3 +94,5 @@ export interface IStorageEstimation {
   pngTileEstimatedSizeInBytes: number;
   storageFactorBuffer: number;
 }
+
+export type JobExportResponse = IJobResponse<ExportJobParameters, unknown>;

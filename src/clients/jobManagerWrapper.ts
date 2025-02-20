@@ -5,7 +5,7 @@ import { IFindJobsByCriteriaBody, IFindJobsRequest, JobManagerClient, OperationS
 import { getUTCDate, IHttpRetryConfig } from '@map-colonies/mc-utils';
 import { Tracer } from '@opentelemetry/api';
 import { withSpanAsyncV4, withSpanV4 } from '@map-colonies/telemetry';
-import { ExportJobParameters, JobExportResponse } from '@map-colonies/raster-shared';
+import { ExportJobParameters } from '@map-colonies/raster-shared';
 import {
   CreateExportJobBody,
   GetJobResponse,
@@ -13,6 +13,7 @@ import {
   IExportInitRequest,
   ITaskParameters,
   JobExportDuplicationParams,
+  JobExportResponse,
 } from '../common/interfaces';
 import { SERVICES } from '../common/constants';
 import { checkFeatures } from '../utils/geometry';
@@ -143,7 +144,6 @@ export class JobManagerWrapper extends JobManagerClient {
     const res = await this.createJob<ExportJobParameters, ITaskParameters>(createJobRequest);
     const createJobResponse: ICreateExportJobResponse = {
       jobId: res.id,
-      taskIds: res.taskIds,
       status: OperationStatus.PENDING,
     };
     return createJobResponse;
@@ -179,6 +179,17 @@ export class JobManagerWrapper extends JobManagerClient {
   private async getExportJobs(queryParams: IFindJobsRequest): Promise<JobExportResponse[] | undefined> {
     this.logger.debug({ ...queryParams }, `Getting jobs that match these parameters`);
     const jobs = await this.get<JobExportResponse[] | undefined>('/jobs', queryParams as unknown as Record<string, unknown>);
+    if (jobs) {
+      const jobsWithParams = await Promise.all(jobs.map(async (job) => this.getExportJobById(job.id)));
+      return jobsWithParams;
+    }
     return jobs;
+  }
+
+  @withSpanAsyncV4
+  private async getExportJobById(jobId: string): Promise<JobExportResponse> {
+    this.logger.debug({ msg: `Getting export job by id`, jobId });
+    const job = await this.get<JobExportResponse>(`/jobs/${jobId}`);
+    return job;
   }
 }

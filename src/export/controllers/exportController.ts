@@ -3,11 +3,12 @@ import { RequestHandler } from 'express';
 import httpStatus from 'http-status-codes';
 import { injectable, inject } from 'tsyringe';
 import { CallbackExportResponse } from '@map-colonies/raster-shared';
+import { CreateExportRequest, createExportRequestSchema } from '@src/utils/zod/schemas';
 import { SERVICES } from '../../common/constants';
 import { ExportManager } from '../models/exportManager';
-import { ICreateExportRequest, ICreateExportJobResponse } from '../../common/interfaces';
+import { ICreateExportJobResponse } from '../../common/interfaces';
 
-type CreateExportHandler = RequestHandler<undefined, ICreateExportJobResponse | CallbackExportResponse, ICreateExportRequest>;
+type CreateExportHandler = RequestHandler<undefined, ICreateExportJobResponse | CallbackExportResponse, unknown>;
 
 @injectable()
 export class ExportController {
@@ -17,7 +18,7 @@ export class ExportController {
   ) {}
 
   public createExport: CreateExportHandler = async (req, res, next) => {
-    const userInput: ICreateExportRequest = req.body;
+    const userInput: CreateExportRequest = createExportRequestSchema.parse(req.body);
     try {
       this.logger.debug(userInput, `Creating package with user input`);
       const jobCreated = await this.manager.createExport(userInput);

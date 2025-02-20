@@ -4,14 +4,22 @@ import { Tracer } from '@opentelemetry/api';
 import { inject, injectable } from 'tsyringe';
 import { degreesPerPixelToZoomLevel } from '@map-colonies/mc-utils';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
-import { ProductType } from '@map-colonies/mc-model-types';
 import { feature, featureCollection } from '@turf/helpers';
 import { withSpanAsyncV4 } from '@map-colonies/telemetry';
-import { IConfig, ICreateExportJobResponse, ICreateExportRequest, IExportInitRequest, IGeometryRecord } from '@src/common/interfaces';
-import { Geometry, MultiPolygon, Polygon } from 'geojson';
+import { IConfig, ICreateExportJobResponse, IExportInitRequest, IGeometryRecord } from '@src/common/interfaces';
+import { MultiPolygon, Polygon } from 'geojson';
 import { calculateEstimateGpkgSize, parseFeatureCollection } from '@src/common/utils';
-import { LinksDefinition, TileFormatStrategy, SourceType, CallbackExportResponse, TileOutputFormat, CallbackUrls } from '@map-colonies/raster-shared';
+import {
+  LinksDefinition,
+  TileFormatStrategy,
+  SourceType,
+  CallbackExportResponse,
+  CallbackUrls,
+  RoiProperties,
+  RasterProductTypes,
+} from '@map-colonies/raster-shared';
 import { v4 as uuidv4 } from 'uuid';
+import { CreateExportRequest } from '@src/utils/zod/schemas';
 import { JobManagerWrapper } from '../../clients/jobManagerWrapper';
 import { DEFAULT_CRS, DEFAULT_PRIORITY, SERVICES } from '../../common/constants';
 import { ValidationManager } from './validationManager';
@@ -34,7 +42,7 @@ export class ExportManager {
   }
 
   @withSpanAsyncV4
-  public async createExport(userInput: ICreateExportRequest): Promise<ICreateExportJobResponse | CallbackExportResponse> {
+  public async createExport(userInput: CreateExportRequest): Promise<ICreateExportJobResponse | CallbackExportResponse> {
     const { dbId, crs, priority, callbackURLs, description } = userInput;
     const layerMetadata = await this.validationManager.findLayer(dbId);
 
@@ -43,7 +51,11 @@ export class ExportManager {
     if (!roi) {
       // convert and wrap layer's footprint to featureCollection
       const layerMaxResolutionDeg = layerMetadata.maxResolutionDeg;
-      const layerFeature = feature(layerMetadata.footprint as Geometry, { maxResolutionDeg: layerMaxResolutionDeg });
+      const layerMinResolutionDeg = layerMetadata.minResolutionDeg;
+      const layerFeature = feature<Polygon | MultiPolygon, RoiProperties>(layerMetadata.footprint as Polygon | MultiPolygon, {
+        maxResolutionDeg: layerMaxResolutionDeg,
+        minResolutionDeg: layerMinResolutionDeg,
+      });
       roi = featureCollection([layerFeature]);
       this.logger.info({
         catalogId: dbId,
@@ -55,12 +67,9 @@ export class ExportManager {
       });
     }
 
-    let { productId: resourceId, productVersion: version, productType, maxResolutionDeg: srcRes } = layerMetadata;
+    const { productId: resourceId, productVersion: version, maxResolutionDeg: srcRes } = layerMetadata;
 
-    resourceId = resourceId as string;
-    version = version as string;
-    productType = productType as ProductType;
-    srcRes = srcRes as number;
+    const productType = layerMetadata.productType as RasterProductTypes;
     const maxZoom = degreesPerPixelToZoomLevel(srcRes);
 
     // ROI vs layer validation section - zoom + geo intersection
@@ -89,7 +98,7 @@ export class ExportManager {
       return duplicationExist;
     }
 
-    const estimatesGpkgSize = calculateEstimateGpkgSize(featuresRecords, layerMetadata.tileOutputFormat as TileOutputFormat);
+    const estimatesGpkgSize = calculateEstimateGpkgSize(featuresRecords, layerMetadata.tileOutputFormat);
     await this.validationManager.validateFreeSpace(estimatesGpkgSize, this.gpkgsLocation);
 
     //creation of params
@@ -117,7 +126,7 @@ export class ExportManager {
       productType,
       priority: priority ?? DEFAULT_PRIORITY,
       description,
-      targetFormat: layerMetadata.tileOutputFormat as TileOutputFormat,
+      targetFormat: layerMetadata.tileOutputFormat,
       outputFormatStrategy: TileFormatStrategy.MIXED,
       gpkgEstimatedSize: estimatesGpkgSize,
     };

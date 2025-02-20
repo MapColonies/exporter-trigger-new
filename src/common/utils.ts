@@ -1,24 +1,22 @@
 import checkDiskSpace from 'check-disk-space';
-import { FeatureCollection } from 'geojson';
 import { bboxToTileRange, degreesPerPixelToZoomLevel, ITileRange, zoomLevelToResolutionMeter } from '@map-colonies/mc-utils';
-import { TileOutputFormat } from '@map-colonies/raster-shared';
+import { RoiFeatureCollection, TileOutputFormat } from '@map-colonies/raster-shared';
 import config from 'config';
 import { IGeometryRecord, IStorageStatusResponse } from './interfaces';
-import { ZOOM_ZERO_RESOLUTION } from './constants';
 
 export const getStorageStatus = async (gpkgsLocation: string): Promise<IStorageStatusResponse> => {
   return checkDiskSpace(gpkgsLocation);
 };
 
-export const parseFeatureCollection = (featuresCollection: FeatureCollection): IGeometryRecord[] => {
+export const parseFeatureCollection = (featuresCollection: RoiFeatureCollection): IGeometryRecord[] => {
   const parsedGeoRecord: IGeometryRecord[] = [];
   featuresCollection.features.forEach((feature) => {
-    if (feature.properties && (feature.properties.maxResolutionDeg as number)) {
-      const targetResolutionDeg = feature.properties.maxResolutionDeg as number;
+    if (feature.properties.maxResolutionDeg) {
+      const targetResolutionDeg = feature.properties.maxResolutionDeg;
+      const minResolutionDeg = feature.properties.minResolutionDeg;
+
       const zoomLevel = degreesPerPixelToZoomLevel(targetResolutionDeg);
       const targetResolutionMeter = zoomLevelToResolutionMeter(zoomLevel) as number;
-      const minResolutionDeg =
-        feature.properties.minResolutionDeg !== undefined ? (feature.properties.minResolutionDeg as number) : ZOOM_ZERO_RESOLUTION;
       const minZoomLevel = degreesPerPixelToZoomLevel(minResolutionDeg);
       parsedGeoRecord.push({
         geometry: feature.geometry,

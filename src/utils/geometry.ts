@@ -4,19 +4,20 @@ import { container } from 'tsyringe';
 import config from 'config';
 import { area, buffer, feature, featureCollection, intersect } from '@turf/turf';
 import PolygonBbox from '@turf/bbox';
-import { BBox, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
+import { BBox, Geometry, MultiPolygon, Polygon } from 'geojson';
 import booleanContains from '@turf/boolean-contains';
 import { featureCollectionBooleanEqual, snapBBoxToTileGrid } from '@map-colonies/mc-utils';
+import { RoiFeatureCollection } from '@map-colonies/raster-shared';
 import { SERVICES } from '../common/constants';
 
 const roiBufferMeter = config.get<number>('roiBufferMeter');
 const minContainedPercentage = config.get<number>('minContainedPercentage');
 
-const isSinglePolygonFeature = (fc: FeatureCollection): fc is FeatureCollection<Polygon> => {
+const isSinglePolygonFeature = (fc: RoiFeatureCollection): boolean => {
   return fc.features.length === 1 && fc.features[0].geometry.type === 'Polygon';
 };
 
-export const checkFeatures = (jobRoi: FeatureCollection, exportRoi: FeatureCollection): boolean => {
+export const checkFeatures = (jobRoi: RoiFeatureCollection, exportRoi: RoiFeatureCollection): boolean => {
   const logger = container.resolve<Logger>(SERVICES.LOGGER);
   // Check if both feature collections contain only a single polygon feature
   if (!isSinglePolygonFeature(jobRoi) || !isSinglePolygonFeature(exportRoi)) {
