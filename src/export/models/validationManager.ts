@@ -6,13 +6,7 @@ import { inject, injectable } from 'tsyringe';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
 import { BadRequestError, InsufficientStorage } from '@map-colonies/error-types';
 import { LayerMetadata } from '@map-colonies/mc-model-types';
-import {
-  CallbackExportResponse,
-  CallbackUrlsTargetArray,
-  ExportJobParameters,
-  JobExportResponse,
-  RoiFeatureCollection,
-} from '@map-colonies/raster-shared';
+import { CallbackExportResponse, CallbackUrlsTargetArray, ExportJobParameters, RoiFeatureCollection } from '@map-colonies/raster-shared';
 import { getStorageStatus } from '@src/common/utils';
 import { SERVICES } from '../../common/constants';
 import { JobManagerWrapper } from '../../clients/jobManagerWrapper';
@@ -24,6 +18,7 @@ import {
   IStorageEstimation,
   IStorageStatusResponse,
   JobExportDuplicationParams,
+  JobExportResponse,
 } from '../../common/interfaces';
 import { sanitizeBbox } from '../../utils/geometry';
 
@@ -157,7 +152,7 @@ export class ValidationManager {
       await this.updateExportCallbackURLs(processingJob, newCallbacks);
       return {
         jobId: processingJob.id,
-        taskIds: (processingJob.tasks as unknown as JobExportResponse[]).map((t) => t.id),
+        percentage: processingJob.percentage,
         status: processingJob.status === OperationStatus.PENDING ? OperationStatus.PENDING : OperationStatus.IN_PROGRESS,
       };
     }

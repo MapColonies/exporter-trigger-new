@@ -211,14 +211,8 @@ components:
         id:
           type: string
           format: uuid
-        taskIds:
-          type: array
-          items:
-            type: string
-            format: uuid
       required:
         - id
-        - taskIds
     createExportJobResponse:
       allOf:
         - $ref: '#/components/schemas/CommonResponse'
@@ -227,16 +221,12 @@ components:
         jobId:
           type: string
           format: uuid
-        taskIds:
-          type: array
-          items:
-            type: string
-            format: uuid
         isDuplicated:
           type: boolean
+        percentage:
+          type: number
       required:
         - jobId
-        - taskIds
     naiveCacheJobResponse:
       allOf:
         - $ref: '#/components/schemas/CommonResponse'

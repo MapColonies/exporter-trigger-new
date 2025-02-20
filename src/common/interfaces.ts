@@ -25,9 +25,9 @@ export interface OpenApiConfig {
 
 export interface ICreateExportJobResponse {
   jobId: string;
-  taskIds: string[];
   status: OperationStatus.PENDING | OperationStatus.COMPLETED | OperationStatus.IN_PROGRESS;
   isDuplicated?: boolean;
+  percentage?: number;
 }
 
 export interface IStorageStatusResponse {
@@ -94,3 +94,5 @@ export interface IStorageEstimation {
   pngTileEstimatedSizeInBytes: number;
   storageFactorBuffer: number;
 }
+
+export type JobExportResponse = IJobResponse<ExportJobParameters, unknown>;
