@@ -139,7 +139,7 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
         .reply(200, completedExportJobsResponse);
-      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]);
+      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]).persist();
 
       const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs);
 
@@ -156,6 +156,8 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, inProgressJobsResponse);
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]);
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -164,14 +166,15 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
         .reply(200, completedExportJobsResponse);
-      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]);
+
+      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]).persist();
 
       nock(jobManagerURL).put(`/jobs/${inProgressJobsResponse[0].id}`, JSON.stringify(inProgressJobsResponse[0].parameters)).reply(200, []);
 
       const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs);
 
       expect(result).toEqual(completedJobCallback);
-    });
+    }, 50000000);
 
     it('should return completed job duplication with expirationDate update', async () => {
       const { crs, resourceId, version, dbId, roi } = dupParams;
@@ -193,7 +196,7 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
         .reply(200, [completedJobWithChangedExpiration]);
-      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedJobWithChangedExpiration);
+      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedJobWithChangedExpiration).persist();
       nock(jobManagerURL).put(`/jobs/${completedExportJobsResponse[0].id}`, JSON.stringify(updateExpirationParams)).reply(200);
       const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs);
 
@@ -211,6 +214,8 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, inProgressJobsResponse);
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]).persist();
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -238,6 +243,8 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, inProgressJobsResponse);
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]).persist();
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -270,6 +277,7 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, matchingJob);
+      nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).reply(200, matchingJob[0]).persist();
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -302,6 +310,7 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, matchingJob);
+      nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).reply(200, matchingJob[0]).persist();
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)

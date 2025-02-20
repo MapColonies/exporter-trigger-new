@@ -244,7 +244,7 @@ export const inProgressJobsResponse = [
 
 export const processingResponse = {
   jobId: inProgressJobsResponse[0].id,
-  taskIds: [inProgressJobsResponse[0].tasks[0].id],
+  percentage: inProgressJobsResponse[0].percentage,
   status: OperationStatus.IN_PROGRESS,
   isDuplicated: true,
 };

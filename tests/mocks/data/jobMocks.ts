@@ -487,7 +487,6 @@ export function generateCreateJobRequest(createExportData: IExportInitRequest): 
 
 export const createJobResponse: ICreateJobResponse = {
   id: '15598cfc-a354-4eaa-b3f3-6029d40ddf6c',
-  taskIds: ['8e504935-d034-43fd-bbb1-984ce9b7ba37'],
 };
 
 export const initExportRequestBody = {
@@ -504,6 +503,7 @@ export const initExportRequestBody = {
             type: 'Feature',
             properties: {
               maxResolutionDeg: 0.703125,
+              minResolutionDeg: 0.703125,
             },
             geometry: {
               type: 'Polygon',
@@ -555,7 +555,6 @@ export const initExportRequestBody = {
 
 export const initExportResponse = {
   id: 'ef1a76e2-3a4b-49e6-90ee-e97c402dd3d8',
-  taskIds: ['0dece32e-b04e-41cb-b133-f4d1a7e960a4'],
 };
 
 export const initExportRequestBodyNoRoiWithCallback = {
@@ -572,6 +571,7 @@ export const initExportRequestBodyNoRoiWithCallback = {
             type: 'Feature',
             properties: {
               maxResolutionDeg: 0.703125,
+              minResolutionDeg: 0.703125,
             },
             geometry: {
               type: 'Polygon',
