@@ -42,9 +42,15 @@ paths:
           content:
             application/json:
               schema:
-                anyOf:
+                oneOf:
                   - $ref: '#/components/schemas/exportNaiveCacheJobResponse'
                   - $ref: '#/components/schemas/createExportJobResponse'
+                discriminator:
+                  propertyName: status
+                  mapping:
+                    Completed: '#/components/schemas/exportNaiveCacheJobResponse'
+                    In-Progress: '#/components/schemas/createExportJobResponse'
+                    Pending: '#/components/schemas/createExportJobResponse'
 
         '400':
           description: Bad Request
@@ -200,21 +206,14 @@ components:
         crs: EPSG:4326
         priority: 0
         description: This is roi exporting example
-    createGpkgJobResponse:
-      allOf:
-        - $ref: '#/components/schemas/CommonResponse'
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-      required:
-        - id
     createExportJobResponse:
-      allOf:
-        - $ref: '#/components/schemas/CommonResponse'
       type: object
       properties:
+        status:
+          type: string
+          enum:
+            - In-Progress
+            - Pending
         jobId:
           type: string
           format: uuid
@@ -224,11 +223,14 @@ components:
           type: number
       required:
         - jobId
+        - status
     exportNaiveCacheJobResponse:
-      allOf:
-        - $ref: '#/components/schemas/CommonResponse'
       type: object
       properties:
+        status:
+          type: string
+          enum:
+            - Completed
         links:
           $ref: '#/components/schemas/callbackLinks'
         expirationTime:
@@ -274,6 +276,7 @@ components:
         - jobId
         - artifacts
         - roi
+        - status
     error:
       type: object
       required:

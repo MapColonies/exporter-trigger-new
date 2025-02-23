@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-magic-numbers */
-import { BBox, FeatureCollection, Polygon } from 'geojson';
+import { RoiFeatureCollection } from '@map-colonies/raster-shared';
+import { BBox, Polygon } from 'geojson';
 
-export const multiplePolygonsFeatureCollection: FeatureCollection = {
+export const multiplePolygonsFeatureCollection: RoiFeatureCollection = {
   type: 'FeatureCollection',
   features: [
     {
       type: 'Feature',
-      properties: {},
+      properties: { maxResolutionDeg: 0.000000335276126861572, minResolutionDeg: 0.703125 },
       geometry: {
         coordinates: [
           [
@@ -21,7 +22,7 @@ export const multiplePolygonsFeatureCollection: FeatureCollection = {
     },
     {
       type: 'Feature',
-      properties: {},
+      properties: { maxResolutionDeg: 0.000000335276126861572, minResolutionDeg: 0.703125 },
       geometry: {
         coordinates: [
           [
@@ -38,12 +39,12 @@ export const multiplePolygonsFeatureCollection: FeatureCollection = {
   ],
 };
 
-export const jobRoiFeature: FeatureCollection = {
+export const jobRoiFeature: RoiFeatureCollection = {
   type: 'FeatureCollection',
   features: [
     {
       type: 'Feature',
-      properties: {},
+      properties: { maxResolutionDeg: 0.000000335276126861572, minResolutionDeg: 0.703125 },
       geometry: {
         coordinates: [
           [
@@ -60,12 +61,12 @@ export const jobRoiFeature: FeatureCollection = {
   ],
 };
 
-export const containedExportRoi: FeatureCollection = {
+export const containedExportRoi: RoiFeatureCollection = {
   type: 'FeatureCollection',
   features: [
     {
       type: 'Feature',
-      properties: {},
+      properties: { maxResolutionDeg: 0.000000335276126861572, minResolutionDeg: 0.703125 },
       geometry: {
         coordinates: [
           [
@@ -83,12 +84,12 @@ export const containedExportRoi: FeatureCollection = {
   ],
 };
 
-export const notContainedExportRoi: FeatureCollection = {
+export const notContainedExportRoi: RoiFeatureCollection = {
   type: 'FeatureCollection',
   features: [
     {
       type: 'Feature',
-      properties: {},
+      properties: { maxResolutionDeg: 0.000000335276126861572, minResolutionDeg: 0.703125 },
       geometry: {
         coordinates: [
           [
