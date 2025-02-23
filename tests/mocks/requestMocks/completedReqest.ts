@@ -45,6 +45,7 @@ export const completedExportJobsResponse = [
               },
               properties: {
                 maxResolutionDeg: 0.703125,
+                minResolutionDeg: 0.703125,
               },
             },
           ],
@@ -108,6 +109,7 @@ export const completedExportJobsResponse = [
               },
               properties: {
                 maxResolutionDeg: 0.703125,
+                minResolutionDeg: 0.703125,
               },
             },
           ],

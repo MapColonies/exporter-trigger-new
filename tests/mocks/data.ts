@@ -3,8 +3,8 @@ import { RecordType } from '@map-colonies/mc-model-types';
 import { BBox, Polygon } from 'geojson';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
 import { RasterProductTypes, RoiFeatureCollection, TileOutputFormat, Transparency } from '@map-colonies/raster-shared';
-import { ICreateExportJobResponse, IGeometryRecord, JobExportDuplicationParams } from '../../src/common/interfaces';
 import { CreateExportRequest } from '@src/utils/zod/schemas';
+import { ICreateExportJobResponse, IGeometryRecord, JobExportDuplicationParams } from '../../src/common/interfaces';
 
 const dbId = '8b867544-2dab-43a1-be6e-f23ec83c19b4';
 const crs = 'EPSG:4326';

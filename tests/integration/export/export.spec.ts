@@ -29,8 +29,6 @@ import { CallbackUrlsTargetArray, ExportJobParameters } from '@map-colonies/rast
 import { getTestContainerConfig, resetContainer } from '../testContainerConfig';
 import { getApp } from '../../../src/app';
 import { ExportSender } from './helpers/exportSender';
-//import { container } from 'tsyringe';
-import { SERVICES } from '@src/common/constants';
 
 jest.mock('uuid', () => ({
   v4: jest.fn(),
@@ -48,17 +46,13 @@ describe('export', function () {
 
   beforeEach(async function () {
     //container.clearInstances();
-    const [app, container] = await getApp({
+    const [app] = await getApp({
       override: [...getTestContainerConfig()],
       useChild: false,
     });
     requestSender = new ExportSender(app);
     catalogManagerURL = configMock.get<string>('externalClientsConfig.clientsUrls.rasterCatalogManager.url');
     jobManagerURL = configMock.get<string>('externalClientsConfig.clientsUrls.jobManager.url');
-    //const logger = container.resolve<Logger>(SERVICES.LOGGER);
-
-    console.log(container.isRegistered(SERVICES.LOGGER));
-    // logger.info('testtttttttttttttttttttttttttttttttttttttt');
   });
 
   afterEach(function () {
@@ -96,7 +90,7 @@ describe('export', function () {
 
       expect(response.status).toBe(httpStatusCodes.OK);
       expect(response).toSatisfyApiSpec();
-    }, 5000000);
+    });
 
     it('should return 200 status code and return completed job', async function () {
       const layerId = createExportRequestWithoutCallback.dbId;
@@ -106,7 +100,7 @@ describe('export', function () {
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
         .reply(200, completedExportJobsResponse);
-      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]);
+      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]).persist();
 
       const response = await requestSender.export(createExportRequestWithoutCallback);
 
@@ -128,6 +122,8 @@ describe('export', function () {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, inProgressJobsResponse);
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]).persist();
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -137,7 +133,7 @@ describe('export', function () {
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
         .reply(200, completedExportJobsResponse);
-      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]);
+      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]).persist();
 
       const response = await requestSender.export(createExportRequestWithoutCallback);
 
@@ -160,6 +156,8 @@ describe('export', function () {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, inProgressJobsResponse);
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]).persist();
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -222,6 +220,7 @@ describe('export', function () {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, matchingJob);
+      nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).reply(200, matchingJob[0]).persist();
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -261,6 +260,7 @@ describe('export', function () {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, matchingJob);
+      nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).reply(200, matchingJob[0]).persist();
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)

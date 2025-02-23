@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-magic-numbers */
 import { ICreateJobResponse, OperationStatus } from '@map-colonies/mc-priority-queue';
-import { JobExportResponse, RasterProductTypes, RoiFeatureCollection, TileFormatStrategy, TileOutputFormat } from '@map-colonies/raster-shared';
-import { CreateExportJobBody, IExportInitRequest, IJobStatusResponse, JobExportDuplicationParams } from '../../../src/common/interfaces';
+import { RasterProductTypes, RoiFeatureCollection, TileFormatStrategy, TileOutputFormat } from '@map-colonies/raster-shared';
+import {
+  CreateExportJobBody,
+  IExportInitRequest,
+  IJobStatusResponse,
+  JobExportDuplicationParams,
+  JobExportResponse,
+} from '../../../src/common/interfaces';
 import { inProgressJobsResponse } from '../requestMocks/processingRequest';
 
 export const getJobStatusByIdResponse: IJobStatusResponse = {
@@ -170,6 +176,7 @@ export const completedJobResponse = [
               },
               properties: {
                 maxResolutionDeg: 0.703125,
+                minResolutionDeg: 0.703125,
               },
             },
           ],
@@ -231,6 +238,7 @@ export const completedJobResponse = [
               },
               properties: {
                 maxResolutionDeg: 0.703125,
+                minResolutionDeg: 0.703125,
               },
             },
           ],
@@ -296,6 +304,7 @@ export const completedJobResponse = [
               },
               properties: {
                 maxResolutionDeg: 0.703125,
+                minResolutionDeg: 0.703125,
               },
             },
           ],
@@ -358,6 +367,7 @@ export const completedJobResponse = [
               },
               properties: {
                 maxResolutionDeg: 0.703125,
+                minResolutionDeg: 0.703125,
               },
             },
           ],

@@ -1,11 +1,11 @@
-import { ICreateExportRequest } from '@src/common/interfaces';
+import { CreateExportRequest } from '@src/utils/zod/schemas';
 import { Application } from 'express';
 import supertest from 'supertest';
 
 export class ExportSender {
   public constructor(private readonly app: Application) {}
 
-  public async export(body: ICreateExportRequest): Promise<supertest.Response> {
+  public async export(body: CreateExportRequest): Promise<supertest.Response> {
     return supertest.agent(this.app).post(`/export`).set('Content-Type', 'application/json').send(body);
   }
 }

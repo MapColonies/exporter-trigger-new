@@ -4,7 +4,7 @@ import { trace } from '@opentelemetry/api';
 import nock from 'nock';
 import { getJobStatusByIdResponse } from '@tests/mocks/data/jobMocks';
 import { inProgressJobsResponse } from '@tests/mocks/requestMocks/processingRequest';
-import { JobExportResponse } from '@map-colonies/raster-shared';
+import { JobExportResponse } from '@src/common/interfaces';
 import { ExportStatusHandler } from '../../../../src/tasks/models/tasksManager';
 import { configMock, registerDefaultConfig } from '../../../mocks/config';
 import { JobManagerWrapper } from '../../../../src/clients/jobManagerWrapper';

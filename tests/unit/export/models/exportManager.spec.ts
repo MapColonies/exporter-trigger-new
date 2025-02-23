@@ -83,11 +83,10 @@ describe('ExportManager', () => {
         .query(completedExportParams as Record<string, string>)
         .reply(200, completedExportJobsResponse);
       nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]).persist();
-      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]);
 
       const result = await exportManager.createExport(createExportRequestWithoutCallback);
       expect(result).toEqual(completedJobCallback);
-    }, 5000000);
+    });
 
     it('should return processing in-progress job', async () => {
       const layerId = createExportRequestWithoutCallback.dbId;

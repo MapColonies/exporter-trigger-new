@@ -42,11 +42,10 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/createExportJobResponse'
+                anyOf:
                   - $ref: '#/components/schemas/exportNaiveCacheJobResponse'
-                discriminator:
-                  propertyName: response
+                  - $ref: '#/components/schemas/createExportJobResponse'
+
         '400':
           description: Bad Request
           content:
@@ -147,8 +146,6 @@ components:
             - In-Progress
             - Completed
             - Pending
-      discriminator:
-        propertyName: response
     exportFromFeatures:
       type: object
       properties:
@@ -227,49 +224,6 @@ components:
           type: number
       required:
         - jobId
-    naiveCacheJobResponse:
-      allOf:
-        - $ref: '#/components/schemas/CommonResponse'
-      type: object
-      properties:
-        status:
-          type: string
-          enum:
-            - Completed
-        fileUri:
-          type: string
-        expirationTime:
-          type: string
-          format: date
-        fileSize:
-          type: number
-        dbId:
-          type: string
-          format: uuid
-        packageName:
-          type: string
-        bbox:
-          oneOf:
-            - $ref: '#/components/schemas/BBox'
-            - $ref: '#/components/schemas/Geometry'
-        targetResolution:
-          type: number
-        requestId:
-          type: string
-        success:
-          type: boolean
-        errorReason:
-          type: string
-      required:
-        - fileUri
-        - expirationTime
-        - fileSize
-        - dbId
-        - packageName
-        - bbox
-        - targetResolution
-        - requestId
-        - success
     exportNaiveCacheJobResponse:
       allOf:
         - $ref: '#/components/schemas/CommonResponse'
@@ -279,7 +233,7 @@ components:
           $ref: '#/components/schemas/callbackLinks'
         expirationTime:
           type: string
-          format: date
+          format: date-time
         fileSize:
           type: number
         recordCatalogId:
@@ -294,14 +248,32 @@ components:
           format: uuid
         errorReason:
           type: string
+        artifacts:
+          type: array
+          items:
+            type: object
+            properties:
+              url:
+                type: string
+              name:
+                type: string
+              size:
+                type: number
+              type:
+                type: string
+            required:
+              - url
+              - name
+              - type
+              - size
       required:
         - links
         - expirationTime
         - fileSize
         - recordCatalogId
-        - roi
         - jobId
-        - status
+        - artifacts
+        - roi
     error:
       type: object
       required:

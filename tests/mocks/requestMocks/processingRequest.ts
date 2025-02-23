@@ -14,6 +14,7 @@ export const processingDupParams = {
         type: 'Feature',
         properties: {
           maxResolutionDeg: 0.703125,
+          minResolutionDeg: 0.703125,
         },
         geometry: {
           type: 'Polygon',
@@ -91,6 +92,7 @@ export const inProgressJobsResponse = [
               },
               properties: {
                 maxResolutionDeg: 0.703125,
+                minResolutionDeg: 0.703125,
               },
             },
           ],
@@ -185,6 +187,7 @@ export const inProgressJobsResponse = [
               },
               properties: {
                 maxResolutionDeg: 0.703125,
+                minResolutionDeg: 0.703125,
               },
             },
           ],
