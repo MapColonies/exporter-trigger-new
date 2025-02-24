@@ -3,11 +3,7 @@ global:
   tracing: {}
   metrics: {}
   environment: ""
-  serviceUrls:
-    catalogManager: ""
-    heartbeatManager: ""
-    jobManager: ""
-    downloadServerPublicDNS: ""
+  serviceUrls: {}
   storage:
     tilesStorageProvider: ""
     fs:
@@ -31,7 +27,6 @@ jobDefinitions:
 serviceUrls:
   catalogManager: ""
   jobManager: ""
-  downloadServerPublicDNS: ""
 storage:
   tilesStorageProvider: ''
   fs:
