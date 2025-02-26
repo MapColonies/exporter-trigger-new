@@ -31,10 +31,10 @@ import {
 } from '@tests/mocks/requestMocks/processingRequest';
 import { ValidationManager } from '@src/export/models/validationManager';
 import { CallbackUrlsTargetArray, ExportJobParameters } from '@map-colonies/raster-shared';
+import { JobExportResponse } from '@src/common/interfaces';
 import { getTestContainerConfig, resetContainer } from '../testContainerConfig';
 import { getApp } from '../../../src/app';
 import { ExportSender } from './helpers/exportSender';
-import { JobExportResponse } from '@src/common/interfaces';
 
 jest.mock('uuid', () => ({
   v4: jest.fn(),
@@ -107,7 +107,11 @@ describe('export', function () {
           .get('/jobs')
           .query(completedExportParams as Record<string, string>)
           .reply(200, completedExportJobsResponse);
-        nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]).persist();
+        nock(jobManagerURL)
+          .get(`/jobs/${completedExportJobsResponse[0].id}`)
+          .query({ shouldReturnTasks: false })
+          .reply(200, completedExportJobsResponse[0])
+          .persist();
 
         const response = await requestSender.export(createExportRequestWithoutCallback);
 
@@ -129,8 +133,12 @@ describe('export', function () {
           .get('/jobs')
           .query(inProgressExportParams as Record<string, string>)
           .reply(200, inProgressJobsResponse);
-        nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]).persist();
-        nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
+        nock(jobManagerURL)
+          .get(`/jobs/${inProgressJobsResponse[0].id}`)
+          .query({ shouldReturnTasks: false })
+          .reply(200, inProgressJobsResponse[0])
+          .persist();
+        nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).query({ shouldReturnTasks: false }).reply(200, inProgressJobsResponse[1]);
         nock(jobManagerURL)
           .get('/jobs')
           .query(pendingExportParams as Record<string, string>)
@@ -140,7 +148,11 @@ describe('export', function () {
           .get('/jobs')
           .query(completedExportParams as Record<string, string>)
           .reply(200, completedExportJobsResponse);
-        nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]).persist();
+        nock(jobManagerURL)
+          .get(`/jobs/${completedExportJobsResponse[0].id}`)
+          .query({ shouldReturnTasks: false })
+          .reply(200, completedExportJobsResponse[0])
+          .persist();
 
         const response = await requestSender.export(createExportRequestWithoutCallback);
 
@@ -163,8 +175,12 @@ describe('export', function () {
           .get('/jobs')
           .query(inProgressExportParams as Record<string, string>)
           .reply(200, inProgressJobsResponse);
-        nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]).persist();
-        nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
+        nock(jobManagerURL)
+          .get(`/jobs/${inProgressJobsResponse[0].id}`)
+          .query({ shouldReturnTasks: false })
+          .reply(200, inProgressJobsResponse[0])
+          .persist();
+        nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).query({ shouldReturnTasks: false }).reply(200, inProgressJobsResponse[1]);
         nock(jobManagerURL)
           .get('/jobs')
           .query(pendingExportParams as Record<string, string>)
@@ -227,7 +243,7 @@ describe('export', function () {
           .get('/jobs')
           .query(inProgressExportParams as Record<string, string>)
           .reply(200, matchingJob);
-        nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).reply(200, matchingJob[0]).persist();
+        nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).query({ shouldReturnTasks: false }).reply(200, matchingJob[0]).persist();
         nock(jobManagerURL)
           .get('/jobs')
           .query(pendingExportParams as Record<string, string>)
@@ -267,7 +283,7 @@ describe('export', function () {
           .get('/jobs')
           .query(inProgressExportParams as Record<string, string>)
           .reply(200, matchingJob);
-        nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).reply(200, matchingJob[0]).persist();
+        nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).query({ shouldReturnTasks: false }).reply(200, matchingJob[0]).persist();
         nock(jobManagerURL)
           .get('/jobs')
           .query(pendingExportParams as Record<string, string>)
@@ -403,9 +419,14 @@ describe('export', function () {
   });
 
   describe('getJobStatus', function () {
+    afterEach(function () {
+      resetContainer();
+      jest.resetAllMocks();
+    });
     describe('Happy Path', function () {
       it('should return 200 status code and the tasks matched the jobId', async function () {
         const jobRequest = inProgressJobsResponse[0] as unknown as JobExportResponse;
+
         nock(jobManagerURL).get(`/jobs/${jobRequest.id}`).reply(200, jobRequest);
 
         const response = await requestSender.getStatusByJobId(jobRequest.id);
@@ -419,12 +440,13 @@ describe('export', function () {
 
     describe('Sad Path', function () {
       it('should return 500 status code when internalServerError from job Manager', async function () {
-        const jobRequest = inProgressJobsResponse[0] as unknown as JobExportResponse;
-        nock(jobManagerURL).get(`/jobs/${jobRequest.id}`).reply(500);
-        const resposne = await requestSender.getStatusByJobId(jobRequest.id);
+        const jobId = '0c940a1b-67ca-45ec-b659-8428c8fa4c22';
 
-        expect(resposne).toSatisfyApiSpec();
-        expect(resposne.status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        nock(jobManagerURL).get(`/jobs/${jobId}`).query({ shouldReturnTasks: false }).reply(500);
+        const response = await requestSender.getStatusByJobId(jobId);
+
+        expect(response).toSatisfyApiSpec();
+        expect(response.status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
         expect.assertions(2);
       });
     });
@@ -433,17 +455,18 @@ describe('export', function () {
       it('should return 400 status code when jobId is not a valid uuid', async function () {
         const jobId = 'string';
 
-        const resposne = await requestSender.getStatusByJobId(jobId);
+        const response = await requestSender.getStatusByJobId(jobId);
 
-        expect(resposne).toSatisfyApiSpec();
-        expect(resposne.status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect(response).toSatisfyApiSpec();
+        expect(response.status).toBe(httpStatusCodes.BAD_REQUEST);
       });
 
       it('should return 404 status code when no job was found', async function () {
-        const jobRequest = inProgressJobsResponse[0] as unknown as JobExportResponse;
-        nock(jobManagerURL).get(`/jobs/${jobRequest.id}`).reply(404);
+        const jobId = '0c940a1b-67ca-45ec-b659-8428c8fa4c21';
 
-        const response = await requestSender.getStatusByJobId(jobRequest.id);
+        nock(jobManagerURL).get(`/jobs/${jobId}`).query({ shouldReturnTasks: false }).reply(404);
+
+        const response = await requestSender.getStatusByJobId(jobId);
 
         expect(response).toSatisfyApiSpec();
         expect(response.status).toBe(httpStatusCodes.NOT_FOUND);

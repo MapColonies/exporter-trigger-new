@@ -21,11 +21,11 @@ import {
   initExportRequestBodyNoRoiWithCallback,
   initExportResponse,
 } from '@tests/mocks/data/jobMocks';
+import { JobExportResponse } from '@src/common/interfaces';
 import { ValidationManager } from '../../../../src/export/models/validationManager';
 import { configMock, registerDefaultConfig, clear as clearConfig } from '../../../mocks/config';
 import { JobManagerWrapper } from '../../../../src/clients/jobManagerWrapper';
 import { RasterCatalogManagerClient } from '../../../../src/clients/rasterCatalogManagerClient';
-import { JobExportResponse } from '@src/common/interfaces';
 
 let exportManager: ExportManager;
 jest.mock('uuid', () => ({
