@@ -5,8 +5,13 @@ import type { MultiPolygon, Polygon } from 'geojson';
 import { inject, injectable } from 'tsyringe';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
 import { BadRequestError, InsufficientStorage } from '@map-colonies/error-types';
-import { LayerMetadata } from '@map-colonies/mc-model-types';
-import { CallbackExportResponse, CallbackUrlsTargetArray, ExportJobParameters, RoiFeatureCollection } from '@map-colonies/raster-shared';
+import {
+  CallbackExportResponse,
+  CallbackUrlsTargetArray,
+  ExportJobParameters,
+  RasterLayerMetadata,
+  RoiFeatureCollection,
+} from '@map-colonies/raster-shared';
 import { getStorageStatus } from '@src/common/utils';
 import { SERVICES } from '../../common/constants';
 import { JobManagerWrapper } from '../../clients/jobManagerWrapper';
@@ -20,7 +25,7 @@ import {
   JobExportDuplicationParams,
   JobExportResponse,
 } from '../../common/interfaces';
-import { sanitizeBbox } from '../../utils/geometry';
+import { checkFeaturesResemblance, sanitizeBbox } from '../../utils/geometry';
 
 @injectable()
 export class ValidationManager {
@@ -37,24 +42,24 @@ export class ValidationManager {
   }
 
   @withSpanAsyncV4
-  public async findLayer(requestedLayerId: string): Promise<LayerMetadata> {
+  public async findLayer(requestedLayerId: string): Promise<RasterLayerMetadata> {
     const layer = await this.rasterCatalogManager.findLayer(requestedLayerId);
     return layer.metadata;
   }
 
   @withSpanAsyncV4
   public async checkForExportDuplicate(
-    resourceId: string,
+    productId: string,
     version: string,
-    dbId: string,
+    catalogId: string,
     roi: RoiFeatureCollection,
     crs: string,
     callbackUrls?: CallbackUrlsTargetArray
   ): Promise<CallbackExportResponse | ICreateExportJobResponse | undefined> {
     const dupParams: JobExportDuplicationParams = {
-      resourceId,
+      productId,
       version,
-      dbId,
+      catalogId,
       roi,
       crs,
     };
@@ -128,14 +133,29 @@ export class ValidationManager {
 
   @withSpanAsyncV4
   private async checkForExportCompleted(dupParams: JobExportDuplicationParams): Promise<CallbackExportResponse | undefined> {
-    this.logger.info({ ...dupParams, roi: undefined, msg: `Checking for COMPLETED duplications with parameters` });
-    const responseJob = await this.jobManagerClient.findExportJob(OperationStatus.COMPLETED, dupParams);
-    if (responseJob) {
-      await this.jobManagerClient.validateAndUpdateExpiration(responseJob.id);
+    this.logger.info({ ...dupParams, msg: `Checking for COMPLETED duplications with parameters` });
+    const exportJobs = await this.jobManagerClient.findExportJobs(OperationStatus.COMPLETED, dupParams);
+    const duplicateJob = this.findDuplicatedExportJob(exportJobs, dupParams);
+    if (duplicateJob) {
+      await this.jobManagerClient.updateJobExpirationDate(duplicateJob.id);
       return {
-        ...responseJob.parameters.callbackParams,
+        ...duplicateJob.parameters.callbackParams,
         status: OperationStatus.COMPLETED,
       } as CallbackExportResponse;
+    }
+  }
+
+  @withSpanV4
+  private findDuplicatedExportJob(jobs: JobExportResponse[] | undefined, jobParams: JobExportDuplicationParams): JobExportResponse | undefined {
+    if (jobs) {
+      const duplicateJob = jobs.find(
+        (job) =>
+          job.internalId === jobParams.catalogId &&
+          job.version === jobParams.version &&
+          job.parameters.exportInputParams.crs === jobParams.crs &&
+          checkFeaturesResemblance(job.parameters.exportInputParams.roi, jobParams.roi)
+      );
+      return duplicateJob;
     }
   }
 
@@ -144,16 +164,17 @@ export class ValidationManager {
     dupParams: JobExportDuplicationParams,
     newCallbacks?: CallbackUrlsTargetArray
   ): Promise<ICreateExportJobResponse | undefined> {
-    this.logger.info({ ...dupParams, roi: undefined, msg: `Checking for PROCESSING duplications with parameters` });
-    const processingJob =
-      (await this.jobManagerClient.findExportJob(OperationStatus.IN_PROGRESS, dupParams, true)) ??
-      (await this.jobManagerClient.findExportJob(OperationStatus.PENDING, dupParams, true));
-    if (processingJob) {
-      await this.updateExportCallbackURLs(processingJob, newCallbacks);
+    this.logger.info({ ...dupParams, msg: `Checking for PROCESSING duplications with parameters` });
+    const inProgressJobs = await this.jobManagerClient.findExportJobs(OperationStatus.IN_PROGRESS, dupParams, true);
+    const pendingJobs = await this.jobManagerClient.findExportJobs(OperationStatus.PENDING, dupParams, true);
+    const processingJobs = [...(inProgressJobs ?? []), ...(pendingJobs ?? [])];
+    const duplicateProcessingJob = this.findDuplicatedExportJob(processingJobs, dupParams);
+    if (duplicateProcessingJob) {
+      await this.updateExportCallbackURLs(duplicateProcessingJob, newCallbacks);
       return {
-        jobId: processingJob.id,
-        percentage: processingJob.percentage,
-        status: processingJob.status === OperationStatus.PENDING ? OperationStatus.PENDING : OperationStatus.IN_PROGRESS,
+        jobId: duplicateProcessingJob.id,
+        percentage: duplicateProcessingJob.percentage,
+        status: duplicateProcessingJob.status === OperationStatus.PENDING ? OperationStatus.PENDING : OperationStatus.IN_PROGRESS,
       };
     }
   }
@@ -195,7 +216,7 @@ export class ValidationManager {
       otherRunningJobsSize += jobGpkgEstimatedSize;
     });
     const actualFreeSpace = storageStatus.free - otherRunningJobsSize * this.storageEstimation.storageFactorBuffer;
-    this.logger.debug({ freeSpace: actualFreeSpace, totalSpace: storageStatus.size }, `Current storage free space for gpkgs location`);
+    this.logger.debug({ msg: `Current storage space in gpkgs location`, freeSpace: actualFreeSpace, totalSpace: storageStatus.size });
     return actualFreeSpace;
   }
 }

@@ -25,11 +25,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/internalError'
+                $ref: '#/components/schemas/ErrorMessage'
   /export:
     post:
       tags:
-        - createGpkg
+        - export
       summary: >-
         Trigger export geopackages based on providing Regions of interest
         (multi-resolution)
@@ -43,51 +43,50 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/exportNaiveCacheJobResponse'
-                  - $ref: '#/components/schemas/createExportJobResponse'
+                  - $ref: '#/components/schemas/ExportNaiveCacheJobResponse'
+                  - $ref: '#/components/schemas/CreateExportJobResponse'
                 discriminator:
                   propertyName: status
                   mapping:
-                    Completed: '#/components/schemas/exportNaiveCacheJobResponse'
-                    In-Progress: '#/components/schemas/createExportJobResponse'
-                    Pending: '#/components/schemas/createExportJobResponse'
-
+                    Completed: '#/components/schemas/ExportNaiveCacheJobResponse'
+                    In-Progress: '#/components/schemas/CreateExportJobResponse'
+                    Pending: '#/components/schemas/CreateExportJobResponse'
         '400':
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/error'
+                $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: Could not find layer with matched dbId
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/error'
+                $ref: '#/components/schemas/ErrorMessage'
         '409':
           description: Duplicate Export Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/error'
+                $ref: '#/components/schemas/ErrorMessage'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/internalError'
+                $ref: '#/components/schemas/ErrorMessage'
         '507':
           description: Insufficient Storage on disk for exporting
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/error'
-  /tasks/taskStatus/{jobId}:
+                $ref: '#/components/schemas/ErrorMessage'
+  /export/{jobId}/status:
     get:
       tags:
-        - tasks
-      summary: Get task status by job id
-      operationId: getTaskStatusByJobId
+        - export
+      summary: Get export status by job id
+      operationId: getJobStatusById
       parameters:
         - name: jobId
           in: path
@@ -101,25 +100,26 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/getTaskStatusResponse'
+                $ref: '#/components/schemas/GetJobStatusResponse'
         '400':
           description: Bad Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/error'
+                $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: Could not find task with matched jobId
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/error'
+                $ref: '#/components/schemas/ErrorMessage'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/internalError'
+                $ref: '#/components/schemas/ErrorMessage'
+
 components:
   requestBodies:
     ExportByRoiBody:
@@ -128,7 +128,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/exportFromFeatures'
+            $ref: '#/components/schemas/ExportFromFeatures'
   schemas:
     StorageResponse:
       type: object
@@ -141,18 +141,7 @@ components:
           type: number
         size:
           type: number
-    CommonResponse:
-      type: object
-      required:
-        - status
-      properties:
-        status:
-          type: string
-          enum:
-            - In-Progress
-            - Completed
-            - Pending
-    exportFromFeatures:
+    ExportFromFeatures:
       type: object
       properties:
         dbId:
@@ -206,7 +195,7 @@ components:
         crs: EPSG:4326
         priority: 0
         description: This is roi exporting example
-    createExportJobResponse:
+    CreateExportJobResponse:
       type: object
       properties:
         status:
@@ -224,7 +213,7 @@ components:
       required:
         - jobId
         - status
-    exportNaiveCacheJobResponse:
+    ExportNaiveCacheJobResponse:
       type: object
       properties:
         status:
@@ -232,7 +221,7 @@ components:
           enum:
             - Completed
         links:
-          $ref: '#/components/schemas/callbackLinks'
+          $ref: '#/components/schemas/CallbackLinks'
         expirationTime:
           type: string
           format: date-time
@@ -277,18 +266,10 @@ components:
         - artifacts
         - roi
         - status
-    error:
+    ErrorMessage:
       type: object
       required:
         - message
-      properties:
-        message:
-          type: string
-    internalError:
-      type: object
-      required:
-        - message
-        - stacktrace
       properties:
         message:
           type: string
@@ -360,7 +341,7 @@ components:
       description: >-
         Bounding box corners (lower left, upper right)=[minx,miny,maxx,maxy] in
         crs units as array. If empty - original layer's bbox is taken.
-    getTaskStatusResponse:
+    GetJobStatusResponse:
       type: object
       properties:
         percentage:
@@ -445,7 +426,7 @@ components:
             - Polygon
             - MultiPolygon
           description: the geometry type
-    callbackLinks:
+    CallbackLinks:
       type: object
       description: gpkg links - the geoPackage + metadata.json
       required:

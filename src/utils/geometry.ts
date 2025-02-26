@@ -17,7 +17,7 @@ const isSinglePolygonFeature = (fc: RoiFeatureCollection): boolean => {
   return fc.features.length === 1 && fc.features[0].geometry.type === 'Polygon';
 };
 
-export const checkFeatures = (jobRoi: RoiFeatureCollection, exportRoi: RoiFeatureCollection): boolean => {
+export const checkFeaturesResemblance = (jobRoi: RoiFeatureCollection, exportRoi: RoiFeatureCollection): boolean => {
   const logger = container.resolve<Logger>(SERVICES.LOGGER);
   // Check if both feature collections contain only a single polygon feature
   if (!isSinglePolygonFeature(jobRoi) || !isSinglePolygonFeature(exportRoi)) {
@@ -46,8 +46,8 @@ export const checkFeatures = (jobRoi: RoiFeatureCollection, exportRoi: RoiFeatur
   const isSufficientlyContained = containedPercentage >= minContainedPercentage;
   logger.info({
     msg: isSufficientlyContained
-      ? 'Export ROI is contained within buffered job ROI with sufficient area percentage'
-      : 'Export ROI does not meet minimum contained percentage within buffered job ROI',
+      ? `Export ROI is contained within buffered job ROI with sufficient area percentage. ContainedPercentage is: ${containedPercentage}`
+      : `Export ROI does not meet minimum contained percentage within buffered job ROI. ContainedPercentage is: ${containedPercentage}, minContainedPercentage is: ${minContainedPercentage}`,
   });
 
   return isSufficientlyContained;

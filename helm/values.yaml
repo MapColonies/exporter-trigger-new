@@ -3,18 +3,8 @@ global:
   tracing: {}
   metrics: {}
   environment: ""
-  serviceUrls:
-    catalogManager: ""
-    heartbeatManager: ""
-    jobManager: ""
-    downloadServerPublicDNS: ""
-  storage:
-    tilesStorageProvider: ""
-    fs:
-      internalPvc:
-        enabled: false
-        name: ""
-        gpkgSubPath: ""
+  serviceUrls: {}
+  storage: {}
   ingress:
     domain: 'apps.aroapp.io'  
   jobDefinitions: {}
@@ -31,7 +21,6 @@ jobDefinitions:
 serviceUrls:
   catalogManager: ""
   jobManager: ""
-  downloadServerPublicDNS: ""
 storage:
   tilesStorageProvider: ''
   fs:
@@ -39,6 +28,7 @@ storage:
       enabled: false
       name: ""
       gpkgSubPath: ""
+      exportPath: ""
 
 enabled: true
 environment: development

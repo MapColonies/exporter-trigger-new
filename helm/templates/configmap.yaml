@@ -19,11 +19,11 @@ data:
   LOG_PRETTY_PRINT_ENABLED: {{ .Values.env.logPrettyPrintEnabled | quote }}
   TELEMETRY_TRACING_ENABLED: {{ $tracing.enabled | quote }}
   {{ if $tracing.enabled }}
-  TELEMETRY_TRACING_URL: {{ $tracing.url }}
+  TELEMETRY_TRACING_URL: {{ $tracing.url | quote }}
   {{ end }}
   TELEMETRY_METRICS_ENABLED: {{ $metrics.enabled | quote }}
   {{ if $metrics.enabled}}
-  TELEMETRY_METRICS_URL: {{ $metrics.url }}
+  TELEMETRY_METRICS_URL: {{ $metrics.url | quote }}
   {{ end }}
   JOB_MANAGER_URL: {{ $serviceUrls.jobManager | quote }}
   CLEANUP_EXPIRATION_DAYS: {{ .Values.env.cleanupExpirationDays | quote }}
@@ -35,7 +35,6 @@ data:
   HTTP_RETRY_SHOULD_RESET_TIMEOUT: {{ .Values.env.httpRetry.shouldResetTimeout | quote }}
   DISABLE_HTTP_CLIENT_LOGS: {{ .Values.env.disableHttpClientLogs | quote }}
   TILES_PROVIDER: {{ $storage.tilesStorageProvider | quote }}
-  DOWNLOAD_SERVER_PUBLIC_DNS: {{ $serviceUrls.downloadServerPublicDNS | quote }}
   JPEG_TILE_ESTIMATED_SIZE_IN_BYTES: {{ .Values.env.estimatedStorageCalculation.jpegTileEstimatedSizeInBytes | quote }}
   PNG_TILE_ESTIMATED_SIZE_IN_BYTES: {{ .Values.env.estimatedStorageCalculation.pngTileEstimatedSizeInBytes | quote }}
   STORAGE_FACTOR_BUFFER: {{ .Values.env.estimatedStorageCalculation.storageFactorBuffer | quote }}

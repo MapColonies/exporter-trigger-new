@@ -7,6 +7,7 @@ const exportRouterFactory: FactoryFunction<Router> = (dependencyContainer) => {
   const controller = dependencyContainer.resolve(ExportController);
 
   router.post('/', controller.createExport);
+  router.get('/:jobId/status', controller.getStatusByJobId);
 
   return router;
 };

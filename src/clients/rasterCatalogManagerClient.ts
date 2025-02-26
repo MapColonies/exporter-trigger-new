@@ -24,7 +24,7 @@ export class RasterCatalogManagerClient extends HttpClient {
 
   public async findLayer(id: string): Promise<LayerInfo> {
     const findLayerUrl = `/records/find`;
-    this.logger.info(`Retrieving catalog record with id ${id}`);
+    this.logger.info({ msg: `Retrieving catalog record with id ${id}` }, id);
 
     const layers = await this.post<LayerInfo[]>(findLayerUrl, { id });
 
@@ -32,7 +32,7 @@ export class RasterCatalogManagerClient extends HttpClient {
       throw new NotFoundError(`Could not find catalog layer with id: ${id}`);
     }
 
-    this.logger.debug(layers[0], `Retrieved layer with id ${id}`);
+    this.logger.debug({ msg: `Retrieved layer with id ${id}` });
     return layers[0];
   }
 }

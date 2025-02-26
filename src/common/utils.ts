@@ -11,22 +11,20 @@ export const getStorageStatus = async (gpkgsLocation: string): Promise<IStorageS
 export const parseFeatureCollection = (featuresCollection: RoiFeatureCollection): IGeometryRecord[] => {
   const parsedGeoRecord: IGeometryRecord[] = [];
   featuresCollection.features.forEach((feature) => {
-    if (feature.properties.maxResolutionDeg) {
-      const targetResolutionDeg = feature.properties.maxResolutionDeg;
-      const minResolutionDeg = feature.properties.minResolutionDeg;
+    const targetResolutionDeg = feature.properties.maxResolutionDeg;
+    const minResolutionDeg = feature.properties.minResolutionDeg;
 
-      const zoomLevel = degreesPerPixelToZoomLevel(targetResolutionDeg);
-      const targetResolutionMeter = zoomLevelToResolutionMeter(zoomLevel) as number;
-      const minZoomLevel = degreesPerPixelToZoomLevel(minResolutionDeg);
-      parsedGeoRecord.push({
-        geometry: feature.geometry,
-        targetResolutionDeg,
-        targetResolutionMeter,
-        minResolutionDeg,
-        minZoomLevel,
-        zoomLevel,
-      });
-    }
+    const zoomLevel = degreesPerPixelToZoomLevel(targetResolutionDeg);
+    const targetResolutionMeter = zoomLevelToResolutionMeter(zoomLevel) as number;
+    const minZoomLevel = degreesPerPixelToZoomLevel(minResolutionDeg);
+    parsedGeoRecord.push({
+      geometry: feature.geometry,
+      targetResolutionDeg,
+      targetResolutionMeter,
+      minResolutionDeg,
+      minZoomLevel,
+      zoomLevel,
+    });
   });
   return parsedGeoRecord;
 };
@@ -55,14 +53,13 @@ export const calculateEstimateGpkgSize = (featuresRecords: IGeometryRecord[], ti
 export const getTileEstimatedSize = (tileOutputFormat: TileOutputFormat): number => {
   const jpegTileEstimatedSizeInBytes = config.get<number>('storageEstimation.jpegTileEstimatedSizeInBytes');
   const pngTileEstimatedSizeInBytes = config.get<number>('storageEstimation.pngTileEstimatedSizeInBytes');
-  //const logger = container.resolve<Logger>(SERVICES.LOGGER);
   let tileEstimatedSize;
+
   if (tileOutputFormat === TileOutputFormat.JPEG) {
     tileEstimatedSize = jpegTileEstimatedSizeInBytes;
   } else {
     tileEstimatedSize = pngTileEstimatedSizeInBytes;
   }
-  //logger.debug(`single tile size defined as ${tileOutputFormat} from configuration: ${tileEstimatedSize} bytes`);
 
   return tileEstimatedSize;
 };

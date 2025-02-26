@@ -8,7 +8,6 @@ import { SERVICES, SERVICE_NAME } from '@common/constants';
 import { getTracing } from '@common/tracing';
 import { getConfig } from './common/config';
 import { STORAGE_ROUTER_SYMBOL, storageRouterFactory } from './storage/routes/storageRouter';
-import { EXPORT_STATUS_ROUTER_SYMBOL, exportStatusRouterFactory } from './tasks/routes/tasksRouter';
 import { EXPORT_ROUTER_SYMBOL, exportRouterFactory } from './export/routes/exportRouter';
 
 export interface RegisterOptions {
@@ -34,7 +33,6 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
     { token: SERVICES.TRACER, provider: { useValue: tracer } },
     { token: SERVICES.METER, provider: { useValue: OtelMetrics.getMeterProvider().getMeter(SERVICE_NAME) } },
     { token: STORAGE_ROUTER_SYMBOL, provider: { useFactory: storageRouterFactory } },
-    { token: EXPORT_STATUS_ROUTER_SYMBOL, provider: { useFactory: exportStatusRouterFactory } },
     { token: EXPORT_ROUTER_SYMBOL, provider: { useFactory: exportRouterFactory } },
     {
       token: 'onSignal',
