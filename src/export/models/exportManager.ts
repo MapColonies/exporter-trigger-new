@@ -112,41 +112,6 @@ export class ExportManager {
     return statusResponse;
   }
 
-  private getSeparator(): string {
-    return this.tilesProvider === 'S3' ? '/' : sep;
-  }
-
-  @withSpanV4
-  private computeFilePathAttributes(
-    productType: string,
-    productId: string,
-    version: string,
-    featuresRecords: IGeometryRecord[]
-  ): { fileNamesTemplates: LinksDefinition; additionalIdentifiers: string; packageRelativePath: string } {
-    const prefixPackageName = this.generateExportFileNames(productType, productId, version, featuresRecords);
-    const packageName = `${prefixPackageName}.gpkg`;
-    const fileNamesTemplates: LinksDefinition = {
-      dataURI: packageName,
-    };
-    const additionalIdentifiers = uuidv4();
-    const separator = this.getSeparator();
-    const packageRelativePath = `${additionalIdentifiers}${separator}${packageName}`;
-
-    return {
-      fileNamesTemplates,
-      additionalIdentifiers,
-      packageRelativePath,
-    };
-  }
-
-  @withSpanV4
-  private generateExportFileNames(productType: string, productId: string, version: string, featuresRecords: IGeometryRecord[]): string {
-    const maxZoom = Math.max(...featuresRecords.map((feature) => feature.zoomLevel));
-    let currentDateStr = new Date().toJSON();
-    currentDateStr = `${currentDateStr}`.replaceAll('-', '_').replaceAll('.', '_').replaceAll(':', '_');
-    return `${productType}_${productId}_${version.replaceAll('.', '_')}_${maxZoom}_${currentDateStr}`;
-  }
-
   @withSpanV4
   private async findJobDuplications(
     productId: string,
@@ -191,5 +156,38 @@ export class ExportManager {
       msg: `ROI not provided, will use default layer's geometry`,
     });
     return roi;
+  }
+
+  private getSeparator(): string {
+    return this.tilesProvider === 'S3' ? '/' : sep;
+  }
+
+  private computeFilePathAttributes(
+    productType: string,
+    productId: string,
+    version: string,
+    featuresRecords: IGeometryRecord[]
+  ): { fileNamesTemplates: LinksDefinition; additionalIdentifiers: string; packageRelativePath: string } {
+    const prefixPackageName = this.generateExportFileNames(productType, productId, version, featuresRecords);
+    const packageName = `${prefixPackageName}.gpkg`;
+    const fileNamesTemplates: LinksDefinition = {
+      dataURI: packageName,
+    };
+    const additionalIdentifiers = uuidv4();
+    const separator = this.getSeparator();
+    const packageRelativePath = `${additionalIdentifiers}${separator}${packageName}`;
+
+    return {
+      fileNamesTemplates,
+      additionalIdentifiers,
+      packageRelativePath,
+    };
+  }
+
+  private generateExportFileNames(productType: string, productId: string, version: string, featuresRecords: IGeometryRecord[]): string {
+    const maxZoom = Math.max(...featuresRecords.map((feature) => feature.zoomLevel));
+    let currentDateStr = new Date().toJSON();
+    currentDateStr = `${currentDateStr}`.replaceAll('-', '_').replaceAll('.', '_').replaceAll(':', '_');
+    return `${productType}_${productId}_${version.replaceAll('.', '_')}_${maxZoom}_${currentDateStr}`;
   }
 }
