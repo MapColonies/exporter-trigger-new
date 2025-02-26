@@ -5,7 +5,7 @@ import { inject, injectable } from 'tsyringe';
 import { degreesPerPixelToZoomLevel } from '@map-colonies/mc-utils';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
 import { feature, featureCollection } from '@turf/helpers';
-import { withSpanAsyncV4 } from '@map-colonies/telemetry';
+import { withSpanAsyncV4, withSpanV4 } from '@map-colonies/telemetry';
 import { IConfig, ICreateExportJobResponse, IExportInitRequest, IGeometryRecord, IJobStatusResponse } from '@src/common/interfaces';
 import { MultiPolygon, Polygon } from 'geojson';
 import { calculateEstimateGpkgSize, parseFeatureCollection } from '@src/common/utils';
@@ -18,10 +18,10 @@ import {
   RoiProperties,
   RasterProductTypes,
   RoiFeatureCollection,
+  RasterLayerMetadata,
 } from '@map-colonies/raster-shared';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateExportRequest } from '@src/utils/zod/schemas';
-import { LayerMetadata } from '@map-colonies/mc-model-types';
 import { JobManagerWrapper } from '../../clients/jobManagerWrapper';
 import { DEFAULT_CRS, DEFAULT_PRIORITY, SERVICES } from '../../common/constants';
 import { ValidationManager } from './validationManager';
@@ -44,18 +44,18 @@ export class ExportManager {
   }
 
   @withSpanAsyncV4
-  public async createExport(userInput: CreateExportRequest): Promise<ICreateExportJobResponse | CallbackExportResponse> {
-    const { dbId, crs, priority, callbackURLs, description } = userInput;
-    const layerMetadata = await this.validationManager.findLayer(dbId);
+  public async createExport(exportRequest: CreateExportRequest): Promise<ICreateExportJobResponse | CallbackExportResponse> {
+    const { dbId: catalogId, crs, priority, callbackURLs, description } = exportRequest;
+    const layerMetadata = await this.validationManager.findLayer(catalogId);
 
-    let roi = userInput.roi;
+    let roi = exportRequest.roi;
 
     if (!roi) {
       // convert and wrap layer's footprint to featureCollection
-      roi = this.calculateRoi(layerMetadata);
+      roi = this.setRoi(layerMetadata);
     }
 
-    const { productId: resourceId, productVersion: version, maxResolutionDeg: srcRes } = layerMetadata;
+    const { productId, productVersion: version, maxResolutionDeg: srcRes } = layerMetadata;
     const productType = layerMetadata.productType as RasterProductTypes;
     const callbacks = callbackURLs ? callbackURLs.map((url) => <CallbackUrls>{ url }) : undefined;
     const maxZoom = degreesPerPixelToZoomLevel(srcRes);
@@ -68,7 +68,7 @@ export class ExportManager {
       srcRes
     );
 
-    const duplicationExist = await this.findJobDuplications(resourceId, version, dbId, roi, crs ?? DEFAULT_CRS, callbacks);
+    const duplicationExist = await this.findJobDuplications(productId, version, catalogId, roi, crs ?? DEFAULT_CRS, callbacks);
     if (duplicationExist) {
       return duplicationExist;
     }
@@ -77,27 +77,18 @@ export class ExportManager {
     await this.validationManager.validateFreeSpace(estimatesGpkgSize, this.gpkgsLocation);
 
     //creation of params
-    const prefixPackageName = this.generateExportFileNames(productType, resourceId, version, featuresRecords);
-    const packageName = `${prefixPackageName}.gpkg`;
-    const metadataFileName = `${prefixPackageName}.json`;
-    const fileNamesTemplates: LinksDefinition = {
-      dataURI: packageName,
-      metadataURI: metadataFileName,
-    };
-    const additionalIdentifiers = uuidv4();
-    const separator = this.getSeparator();
-    const packageRelativePath = `${additionalIdentifiers}${separator}${packageName}`;
+    const computedAttributes = this.computeFilePathAttributes(productType, productId, version, featuresRecords);
 
-    const workerInput: IExportInitRequest = {
+    const exportInitRequest: IExportInitRequest = {
       crs: crs ?? DEFAULT_CRS,
       roi: roi,
-      callbacks: callbacks,
-      fileNamesTemplates: fileNamesTemplates,
-      relativeDirectoryPath: additionalIdentifiers,
-      packageRelativePath,
-      dbId,
+      callbackUrls: callbacks,
+      fileNamesTemplates: computedAttributes.fileNamesTemplates,
+      relativeDirectoryPath: computedAttributes.additionalIdentifiers,
+      packageRelativePath: computedAttributes.packageRelativePath,
+      catalogId,
       version: version,
-      cswProductId: resourceId,
+      productId,
       productType,
       priority: priority ?? DEFAULT_PRIORITY,
       description,
@@ -105,7 +96,7 @@ export class ExportManager {
       outputFormatStrategy: TileFormatStrategy.MIXED,
       gpkgEstimatedSize: estimatesGpkgSize,
     };
-    const jobCreated = await this.jobManagerClient.createExportJob(workerInput);
+    const jobCreated = await this.jobManagerClient.createExportJob(exportInitRequest);
     return jobCreated;
   }
 
@@ -125,22 +116,47 @@ export class ExportManager {
     return this.tilesProvider === 'S3' ? '/' : sep;
   }
 
-  private generateExportFileNames(productType: string, productId: string, productVersion: string, featuresRecords: IGeometryRecord[]): string {
+  @withSpanV4
+  private computeFilePathAttributes(
+    productType: string,
+    productId: string,
+    version: string,
+    featuresRecords: IGeometryRecord[]
+  ): { fileNamesTemplates: LinksDefinition; additionalIdentifiers: string; packageRelativePath: string } {
+    const prefixPackageName = this.generateExportFileNames(productType, productId, version, featuresRecords);
+    const packageName = `${prefixPackageName}.gpkg`;
+    const fileNamesTemplates: LinksDefinition = {
+      dataURI: packageName,
+    };
+    const additionalIdentifiers = uuidv4();
+    const separator = this.getSeparator();
+    const packageRelativePath = `${additionalIdentifiers}${separator}${packageName}`;
+
+    return {
+      fileNamesTemplates,
+      additionalIdentifiers,
+      packageRelativePath,
+    };
+  }
+
+  @withSpanV4
+  private generateExportFileNames(productType: string, productId: string, version: string, featuresRecords: IGeometryRecord[]): string {
     const maxZoom = Math.max(...featuresRecords.map((feature) => feature.zoomLevel));
     let currentDateStr = new Date().toJSON();
     currentDateStr = `${currentDateStr}`.replaceAll('-', '_').replaceAll('.', '_').replaceAll(':', '_');
-    return `${productType}_${productId}_${productVersion.replaceAll('.', '_')}_${maxZoom}_${currentDateStr}`;
+    return `${productType}_${productId}_${version.replaceAll('.', '_')}_${maxZoom}_${currentDateStr}`;
   }
 
+  @withSpanV4
   private async findJobDuplications(
-    resourceId: string,
+    productId: string,
     version: string,
     catalogId: string,
     roi: RoiFeatureCollection,
     crs: string,
     callbacks?: CallbackUrls[]
   ): Promise<CallbackExportResponse | ICreateExportJobResponse | undefined> {
-    const duplicationExist = await this.validationManager.checkForExportDuplicate(resourceId, version, catalogId, roi, crs, callbacks);
+    const duplicationExist = await this.validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs, callbacks);
 
     if (duplicationExist && duplicationExist.status === OperationStatus.COMPLETED) {
       const callbackParam = duplicationExist as CallbackExportResponse;
@@ -157,7 +173,8 @@ export class ExportManager {
     return duplicationExist;
   }
 
-  private calculateRoi(layerMetadata: LayerMetadata): RoiFeatureCollection {
+  @withSpanV4
+  private setRoi(layerMetadata: RasterLayerMetadata): RoiFeatureCollection {
     // convert and wrap layer's footprint to featureCollection
     const layerMaxResolutionDeg = layerMetadata.maxResolutionDeg;
     const layerMinResolutionDeg = layerMetadata.minResolutionDeg;

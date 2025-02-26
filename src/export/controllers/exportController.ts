@@ -19,10 +19,10 @@ export class ExportController {
   ) {}
 
   public createExport: CreateExportHandler = async (req, res, next) => {
-    const userInput: CreateExportRequest = createExportRequestSchema.parse(req.body);
+    const exportRequest: CreateExportRequest = createExportRequestSchema.parse(req.body);
     try {
-      this.logger.debug(userInput, `Creating package with user input`);
-      const jobCreated = await this.manager.createExport(userInput);
+      this.logger.debug({ msg: `Creating export request with export request:`, exportRequest });
+      const jobCreated = await this.manager.createExport(exportRequest);
       return res.status(httpStatus.OK).json(jobCreated);
     } catch (err) {
       next(err);
@@ -32,8 +32,9 @@ export class ExportController {
   public getStatusByJobId: GetStatusByJobIdHandler = async (req, res, next) => {
     const jobId: string = req.params.jobId;
     try {
-      const taskStatus = await this.manager.getJobStatusByJobId(jobId);
-      return res.status(httpStatus.OK).json(taskStatus);
+      this.logger.debug({ msg: `Getting job status for jobId:`, jobId });
+      const jobStatus = await this.manager.getJobStatusByJobId(jobId);
+      return res.status(httpStatus.OK).json(jobStatus);
     } catch (err) {
       next(err);
     }

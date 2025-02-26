@@ -36,7 +36,7 @@ export interface IStorageStatusResponse {
 }
 
 export interface IJobStatusResponse {
-  percentage: number | undefined;
+  percentage?: number;
   status: OperationStatus;
 }
 
@@ -46,7 +46,7 @@ export type LayerInfo = Required<IRasterCatalogUpsertRequestBody>;
 
 export interface IGeometryRecordBase {
   zoomLevel: number;
-  sanitizedBox?: BBox | null | undefined;
+  sanitizedBox?: BBox | null;
 }
 
 export interface IGeometryRecord extends IGeometryRecordBase {
@@ -58,9 +58,9 @@ export interface IGeometryRecord extends IGeometryRecordBase {
 }
 
 export interface JobExportDuplicationParams {
-  resourceId: string;
+  productId: string;
   version: string;
-  dbId: string;
+  catalogId: string;
   crs: string;
   roi: RoiFeatureCollection;
 }
@@ -72,13 +72,13 @@ export interface ITaskParameters {
 export interface IExportInitRequest {
   crs: string;
   roi: RoiFeatureCollection;
-  callbacks?: CallbackUrlsTargetArray;
+  callbackUrls?: CallbackUrlsTargetArray;
   fileNamesTemplates: LinksDefinition;
   relativeDirectoryPath: string;
-  dbId: string;
+  catalogId: string;
   priority?: number;
   version: string;
-  cswProductId: string;
+  productId: string;
   productType: RasterProductTypes;
   packageRelativePath: string;
   gpkgEstimatedSize: number;

@@ -25,7 +25,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalErrorMessage'
+                $ref: '#/components/schemas/ErrorMessage'
   /export:
     post:
       tags:
@@ -56,31 +56,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: Could not find layer with matched dbId
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorMessage'
         '409':
           description: Duplicate Export Request
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorMessage'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalErrorMessage'
+                $ref: '#/components/schemas/ErrorMessage'
         '507':
           description: Insufficient Storage on disk for exporting
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorMessage'
   /export/{jobId}/status:
     get:
       tags:
@@ -106,19 +106,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorMessage'
         '404':
           description: Could not find task with matched jobId
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorMessage'
         '500':
           description: Internal Server Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InternalErrorMessage'
+                $ref: '#/components/schemas/ErrorMessage'
 
 components:
   requestBodies:
@@ -266,18 +266,10 @@ components:
         - artifacts
         - roi
         - status
-    Error:
+    ErrorMessage:
       type: object
       required:
         - message
-      properties:
-        message:
-          type: string
-    InternalErrorMessage:
-      type: object
-      required:
-        - message
-        - stacktrace
       properties:
         message:
           type: string

@@ -21,7 +21,7 @@ export class StorageManager {
   @withSpanAsyncV4
   public async getStorage(): Promise<IStorageStatusResponse> {
     const storageStatus: IStorageStatusResponse = await utils.getStorageStatus(this.gpkgsLocation);
-    this.logger.debug({ storageStatus, msg: `Current storage free and total space for gpkgs location` });
+    this.logger.debug({ msg: `Current storage status for gpkgs location`, storageStatus });
 
     return {
       free: storageStatus.free,

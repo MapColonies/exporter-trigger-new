@@ -4,7 +4,7 @@ import { Logger } from '@map-colonies/js-logger';
 import { IFindJobsByCriteriaBody, IFindJobsRequest, JobManagerClient, OperationStatus } from '@map-colonies/mc-priority-queue';
 import { getUTCDate, IHttpRetryConfig } from '@map-colonies/mc-utils';
 import { Tracer } from '@opentelemetry/api';
-import { withSpanAsyncV4, withSpanV4 } from '@map-colonies/telemetry';
+import { withSpanAsyncV4 } from '@map-colonies/telemetry';
 import { ExportJobParameters } from '@map-colonies/raster-shared';
 import {
   CreateExportJobBody,
@@ -15,12 +15,11 @@ import {
   JobExportResponse,
 } from '../common/interfaces';
 import { SERVICES } from '../common/constants';
-import { checkFeatures } from '../utils/geometry';
 
 @injectable()
 export class JobManagerWrapper extends JobManagerClient {
-  private readonly tilesJobType: string;
-  private readonly tilesTaskType: string;
+  private readonly exportJobType: string;
+  private readonly exportInitTaskType: string;
   private readonly expirationDays: number;
   private readonly jobDomain: string;
   public constructor(
@@ -35,53 +34,46 @@ export class JobManagerWrapper extends JobManagerClient {
       config.get<boolean>('externalClientsConfig.disableHttpClientLogs')
     );
     this.expirationDays = config.get<number>('cleanupExpirationDays');
-    this.tilesJobType = config.get<string>('jobDefinitions.jobs.export.type');
-    this.tilesTaskType = config.get<string>('jobDefinitions.tasks.init.type');
+    this.exportJobType = config.get<string>('jobDefinitions.jobs.export.type');
+    this.exportInitTaskType = config.get<string>('jobDefinitions.tasks.init.type');
     this.jobDomain = config.get<string>('domain');
   }
 
   @withSpanAsyncV4
   public async getJobByJobId(jobId: string): Promise<JobExportResponse> {
     this.logger.debug({ msg: `Getting export job by id`, jobId });
-    const job = await this.get<JobExportResponse>(`/jobs/${jobId}`);
+    const job = await this.getJob<ExportJobParameters, unknown>(jobId);
     return job;
   }
 
   @withSpanAsyncV4
-  public async findExportJob(
+  public async findExportJobs(
     status: OperationStatus,
     jobParams: JobExportDuplicationParams,
     shouldReturnTasks = false
-  ): Promise<JobExportResponse | undefined> {
+  ): Promise<JobExportResponse[] | undefined> {
     const queryParams: IFindJobsRequest = {
-      resourceId: jobParams.resourceId,
+      resourceId: jobParams.productId,
       version: jobParams.version,
       isCleaned: false,
-      type: this.tilesJobType,
+      type: this.exportJobType,
       shouldReturnTasks,
       status,
     };
     const jobs = await this.getExportJobs(queryParams);
-    if (jobs) {
-      const matchingJob = this.findExportJobWithMatchingParams(jobs, jobParams);
-      return matchingJob;
-    }
-
-    return undefined;
+    return jobs;
   }
 
-  //TODO: check how export cleanup works and which params it needs+ change to receive entire job
   @withSpanAsyncV4
-  public async validateAndUpdateExpiration(jobId: string): Promise<void> {
-    const getOrUpdateURL = `/jobs/${jobId}`;
+  public async updateJobExpirationDate(jobId: string): Promise<void> {
     const newExpirationDate = getUTCDate();
     newExpirationDate.setDate(newExpirationDate.getDate() + this.expirationDays);
     //TODO: remove this
-    const job = await this.get<JobExportResponse>(getOrUpdateURL);
+    const job = await this.getJob<ExportJobParameters, unknown>(jobId);
     const oldExpirationDate = new Date(job.parameters.cleanupDataParams?.cleanupExpirationTimeUTC as Date);
     if (oldExpirationDate < newExpirationDate) {
-      this.logger.info({ jobId, oldExpirationDate, newExpirationDate, msg: 'update expirationDate' });
-      await this.put(getOrUpdateURL, {
+      this.logger.info({ msg: `updated expirationDate`, jobId, oldExpirationDate, newExpirationDate });
+      await this.updateJob<ExportJobParameters>(jobId, {
         parameters: {
           ...job.parameters,
           cleanupDataParams: {
@@ -92,21 +84,21 @@ export class JobManagerWrapper extends JobManagerClient {
         },
       });
     } else {
-      const msg = 'Wont update expiration date, as current expiration date is later than current expiration date';
-      this.logger.info({ jobId, oldExpirationDate, newExpirationDate, msg });
+      const msg = `didn't update expiration date, as current expiration date is later than current expiration date`;
+      this.logger.info({ msg, jobId, oldExpirationDate, newExpirationDate });
     }
   }
 
   @withSpanAsyncV4
   public async createExportJob(data: IExportInitRequest): Promise<ICreateExportJobResponse> {
-    const expirationDate = new Date();
+    const expirationDate = getUTCDate();
     expirationDate.setDate(expirationDate.getDate() + this.expirationDays);
     const taskParams: ITaskParameters[] = [{ blockDuplication: true }];
 
     const jobParameters: ExportJobParameters = {
       exportInputParams: {
         roi: data.roi,
-        callbackUrls: data.callbacks,
+        callbackUrls: data.callbackUrls,
         crs: data.crs,
       },
       additionalParams: {
@@ -120,14 +112,13 @@ export class JobManagerWrapper extends JobManagerClient {
     };
 
     const createJobRequest: CreateExportJobBody = {
-      resourceId: data.cswProductId,
+      resourceId: data.productId,
       version: data.version,
-      type: this.tilesJobType,
+      type: this.exportJobType,
       domain: this.jobDomain,
       parameters: jobParameters,
-      internalId: data.dbId,
+      internalId: data.catalogId,
       productType: data.productType,
-      productName: data.cswProductId,
       priority: data.priority,
       description: data.description,
       status: OperationStatus.PENDING,
@@ -135,7 +126,7 @@ export class JobManagerWrapper extends JobManagerClient {
       additionalIdentifiers: data.relativeDirectoryPath,
       tasks: taskParams.map((params) => {
         return {
-          type: this.tilesTaskType,
+          type: this.exportInitTaskType,
           parameters: params,
         };
       }),
@@ -152,31 +143,19 @@ export class JobManagerWrapper extends JobManagerClient {
   public async findAllProcessingExportJobs(shouldReturnTasks = false): Promise<JobExportResponse[]> {
     const criteria: IFindJobsByCriteriaBody = {
       isCleaned: false,
-      types: [this.tilesJobType],
+      types: [this.exportJobType],
       shouldReturnTasks,
       statuses: [OperationStatus.IN_PROGRESS, OperationStatus.PENDING],
     };
 
-    this.logger.debug({ ...criteria }, `Getting processing export jobs `);
+    this.logger.debug({ msg: `Getting processing export jobs `, ...criteria });
     const jobs = await this.post<JobExportResponse[]>('/jobs/find', criteria);
     return jobs;
   }
 
-  @withSpanV4
-  private findExportJobWithMatchingParams(jobs: JobExportResponse[], jobParams: JobExportDuplicationParams): JobExportResponse | undefined {
-    const matchingJob = jobs.find(
-      (job) =>
-        job.internalId === jobParams.dbId &&
-        job.version === jobParams.version &&
-        job.parameters.exportInputParams.crs === jobParams.crs &&
-        checkFeatures(job.parameters.exportInputParams.roi, jobParams.roi)
-    );
-    return matchingJob;
-  }
-
   @withSpanAsyncV4
   private async getExportJobs(queryParams: IFindJobsRequest): Promise<JobExportResponse[] | undefined> {
-    this.logger.debug({ ...queryParams }, `Getting jobs that match these parameters`);
+    this.logger.debug({ msg: `Getting jobs that match these parameters`, ...queryParams });
     const jobs = await this.get<JobExportResponse[] | undefined>('/jobs', queryParams as unknown as Record<string, unknown>);
     if (jobs) {
       const jobsWithParams = await Promise.all(jobs.map(async (job) => this.getJobByJobId(job.id)));

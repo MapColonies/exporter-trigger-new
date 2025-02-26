@@ -4,13 +4,7 @@ global:
   metrics: {}
   environment: ""
   serviceUrls: {}
-  storage:
-    tilesStorageProvider: ""
-    fs:
-      internalPvc:
-        enabled: false
-        name: ""
-        gpkgSubPath: ""
+  storage: {}
   ingress:
     domain: 'apps.aroapp.io'  
   jobDefinitions: {}
@@ -34,6 +28,7 @@ storage:
       enabled: false
       name: ""
       gpkgSubPath: ""
+      exportPath: ""
 
 enabled: true
 environment: development
