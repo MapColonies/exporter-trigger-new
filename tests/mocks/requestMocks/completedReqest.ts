@@ -5,7 +5,7 @@ import { TileFormatStrategy, TileOutputFormat } from '@map-colonies/raster-share
 import { dupParams } from '../data';
 
 export const completedExportParams = {
-  resourceId: dupParams.resourceId,
+  resourceId: dupParams.productId,
   version: dupParams.version,
   isCleaned: false,
   type: 'Export',
@@ -54,8 +54,6 @@ export const completedExportJobsResponse = [
         links: {
           dataURI:
             'https://download-dev.mapcolonies.net/api/raster/v1/downloads/63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_22_56_272Z.gpkg',
-          metadataURI:
-            'https://download-dev.mapcolonies.net/api/raster/v1/downloads/63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_22_56_272Z.json',
         },
         status: 'Completed',
         fileSize: 77824,
@@ -80,7 +78,6 @@ export const completedExportJobsResponse = [
       additionalParams: {
         fileNamesTemplates: {
           dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.gpkg',
-          metadataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.json',
         },
         packageRelativePath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.gpkg',
         relativeDirectoryPath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7',

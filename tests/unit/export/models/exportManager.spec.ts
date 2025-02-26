@@ -15,11 +15,17 @@ import {
   pendingExportParams,
   processingResponse,
 } from '@tests/mocks/requestMocks/processingRequest';
-import { initExportRequestBody, initExportRequestBodyNoRoiWithCallback, initExportResponse } from '@tests/mocks/data/jobMocks';
+import {
+  getJobStatusByIdResponse,
+  initExportRequestBody,
+  initExportRequestBodyNoRoiWithCallback,
+  initExportResponse,
+} from '@tests/mocks/data/jobMocks';
 import { ValidationManager } from '../../../../src/export/models/validationManager';
 import { configMock, registerDefaultConfig, clear as clearConfig } from '../../../mocks/config';
 import { JobManagerWrapper } from '../../../../src/clients/jobManagerWrapper';
 import { RasterCatalogManagerClient } from '../../../../src/clients/rasterCatalogManagerClient';
+import { JobExportResponse } from '@src/common/interfaces';
 
 let exportManager: ExportManager;
 jest.mock('uuid', () => ({
@@ -44,6 +50,24 @@ describe('ExportManager', () => {
     nock.cleanAll();
     clearConfig();
     jest.resetAllMocks();
+  });
+  describe('getJobStatusByJobId', () => {
+    it('should successfully return job status by jobId', async () => {
+      const jobRequest = inProgressJobsResponse[0] as unknown as JobExportResponse;
+      nock(jobManagerURL).get(`/jobs/${jobRequest.id}`).query({ shouldReturnTasks: false }).reply(200, jobRequest);
+
+      const response = await exportManager.getJobStatusByJobId(jobRequest.id);
+
+      expect(response).toEqual(getJobStatusByIdResponse);
+    });
+    it('should throw NotFoundError when jobId doesnt exist', async () => {
+      const jobRequest = inProgressJobsResponse[0] as unknown as JobExportResponse;
+      nock(jobManagerURL).get(`/jobs/${jobRequest.id}`).query({ shouldReturnTasks: false }).reply(404, []);
+
+      const action = async () => exportManager.getJobStatusByJobId(jobRequest.id);
+
+      await expect(action()).rejects.toThrow(NotFoundError);
+    });
   });
 
   describe('createExport', () => {
@@ -82,7 +106,11 @@ describe('ExportManager', () => {
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
         .reply(200, completedExportJobsResponse);
-      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]).persist();
+      nock(jobManagerURL)
+        .get(`/jobs/${completedExportJobsResponse[0].id}`)
+        .query({ shouldReturnTasks: false })
+        .reply(200, completedExportJobsResponse[0])
+        .persist();
 
       const result = await exportManager.createExport(createExportRequestWithoutCallback);
       expect(result).toEqual(completedJobCallback);
@@ -101,8 +129,12 @@ describe('ExportManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, inProgressJobsResponse);
-      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]).persist();
-      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
+      nock(jobManagerURL)
+        .get(`/jobs/${inProgressJobsResponse[0].id}`)
+        .query({ shouldReturnTasks: false })
+        .reply(200, inProgressJobsResponse[0])
+        .persist();
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).query({ shouldReturnTasks: false }).reply(200, inProgressJobsResponse[1]);
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)

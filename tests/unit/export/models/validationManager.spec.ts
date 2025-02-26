@@ -114,7 +114,7 @@ describe('ValidationManager', () => {
 
   describe('checkForExportDuplicate', () => {
     it('should return undefined when no duplicate jobs', async () => {
-      const { crs, resourceId, version, dbId, roi } = dupParams;
+      const { crs, productId, version, catalogId, roi } = dupParams;
       nock(jobManagerURL)
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
@@ -128,26 +128,30 @@ describe('ValidationManager', () => {
         .query(pendingExportParams as Record<string, string>)
         .reply(200, undefined);
 
-      const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs);
+      const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs);
 
       expect(result).toBeUndefined();
     });
 
     it('should return completed job duplication without expirationDate update', async () => {
-      const { crs, resourceId, version, dbId, roi } = dupParams;
+      const { crs, productId, version, catalogId, roi } = dupParams;
       nock(jobManagerURL)
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
         .reply(200, completedExportJobsResponse);
-      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]).persist();
+      nock(jobManagerURL)
+        .get(`/jobs/${completedExportJobsResponse[0].id}`)
+        .query({ shouldReturnTasks: false })
+        .reply(200, completedExportJobsResponse[0])
+        .persist();
 
-      const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs);
+      const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs);
 
       expect(result).toEqual(completedJobCallback);
     });
 
     it('should return a completed export job with race condition', async () => {
-      const { crs, resourceId, version, dbId, roi } = dupParams;
+      const { crs, productId, version, catalogId, roi } = dupParams;
       nock(jobManagerURL)
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
@@ -156,8 +160,8 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, inProgressJobsResponse);
-      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]);
-      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).query({ shouldReturnTasks: false }).reply(200, inProgressJobsResponse[0]);
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).query({ shouldReturnTasks: false }).reply(200, inProgressJobsResponse[1]);
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -167,17 +171,21 @@ describe('ValidationManager', () => {
         .query(completedExportParams as Record<string, string>)
         .reply(200, completedExportJobsResponse);
 
-      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedExportJobsResponse[0]).persist();
+      nock(jobManagerURL)
+        .get(`/jobs/${completedExportJobsResponse[0].id}`)
+        .query({ shouldReturnTasks: false })
+        .reply(200, completedExportJobsResponse[0])
+        .persist();
 
       nock(jobManagerURL).put(`/jobs/${inProgressJobsResponse[0].id}`, JSON.stringify(inProgressJobsResponse[0].parameters)).reply(200, []);
 
-      const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs);
+      const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs);
 
       expect(result).toEqual(completedJobCallback);
     }, 50000000);
 
     it('should return completed job duplication with expirationDate update', async () => {
-      const { crs, resourceId, version, dbId, roi } = dupParams;
+      const { crs, productId, version, catalogId, roi } = dupParams;
       const completedJobWithChangedExpiration = { ...completedExportJobsResponse[0] };
       const newExpirationDate = getUTCDate();
       newExpirationDate.setDate(newExpirationDate.getDate() + 30);
@@ -196,15 +204,19 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
         .reply(200, [completedJobWithChangedExpiration]);
-      nock(jobManagerURL).get(`/jobs/${completedExportJobsResponse[0].id}`).reply(200, completedJobWithChangedExpiration).persist();
+      nock(jobManagerURL)
+        .get(`/jobs/${completedExportJobsResponse[0].id}`)
+        .query({ shouldReturnTasks: false })
+        .reply(200, completedJobWithChangedExpiration)
+        .persist();
       nock(jobManagerURL).put(`/jobs/${completedExportJobsResponse[0].id}`, JSON.stringify(updateExpirationParams)).reply(200);
-      const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs);
+      const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs);
 
       expect(result).toEqual(completedJobCallback);
     });
 
     it('should return a processing export job without race condition', async () => {
-      const { crs, resourceId, version, dbId, roi } = dupParams;
+      const { crs, productId, version, catalogId, roi } = dupParams;
       nock(jobManagerURL)
         .get('/jobs')
         .query(completedExportParams as Record<string, string>)
@@ -214,8 +226,12 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, inProgressJobsResponse);
-      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]).persist();
-      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
+      nock(jobManagerURL)
+        .get(`/jobs/${inProgressJobsResponse[0].id}`)
+        .query({ shouldReturnTasks: false })
+        .reply(200, inProgressJobsResponse[0])
+        .persist();
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).query({ shouldReturnTasks: false }).reply(200, inProgressJobsResponse[1]);
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -223,13 +239,13 @@ describe('ValidationManager', () => {
 
       nock(jobManagerURL).put(`/jobs/${inProgressJobsResponse[0].id}`, JSON.stringify(inProgressJobsResponse[0].parameters)).reply(200, []);
 
-      const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs);
+      const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs);
 
       expect(result).toEqual(processingResponse);
     });
 
     it('should return a processing export job and add new callbacks', async () => {
-      const { crs, resourceId, version, dbId, roi } = dupParams;
+      const { crs, productId, version, catalogId, roi } = dupParams;
       const updatedCallbackParameters: ExportJobParameters = { ...(inProgressJobsResponse[0].parameters as ExportJobParameters) };
       //This uses the logical assignment operator (||=), which assigns a value only if the left-hand side is falsy.
       (updatedCallbackParameters.exportInputParams.callbackUrls ||= []).push(addedCallbackUrl[0]);
@@ -243,8 +259,12 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, inProgressJobsResponse);
-      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[0].id}`).reply(200, inProgressJobsResponse[0]).persist();
-      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).reply(200, inProgressJobsResponse[1]);
+      nock(jobManagerURL)
+        .get(`/jobs/${inProgressJobsResponse[0].id}`)
+        .query({ shouldReturnTasks: false })
+        .reply(200, inProgressJobsResponse[0])
+        .persist();
+      nock(jobManagerURL).get(`/jobs/${inProgressJobsResponse[1].id}`).query({ shouldReturnTasks: false }).reply(200, inProgressJobsResponse[1]);
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -254,13 +274,13 @@ describe('ValidationManager', () => {
         .put(`/jobs/${inProgressJobsResponse[0].id}`, JSON.stringify({ parameters: updatedCallbackParameters }))
         .reply(200, []);
 
-      const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs, addedCallbackUrl);
+      const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs, addedCallbackUrl);
 
       expect(result).toEqual(processingResponse);
     });
 
     it('should return an processing export job and add a callback', async () => {
-      const { crs, resourceId, version, dbId, roi } = dupParams;
+      const { crs, productId, version, catalogId, roi } = dupParams;
       const matchingJob = [{ ...inProgressJobsResponse[0] }];
       // Perform a deep copy of the parameters object
       const updatedCallbackParameters = JSON.parse(JSON.stringify(matchingJob[0].parameters)) as ExportJobParameters;
@@ -277,7 +297,7 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, matchingJob);
-      nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).reply(200, matchingJob[0]).persist();
+      nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).query({ shouldReturnTasks: false }).reply(200, matchingJob[0]).persist();
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -287,13 +307,13 @@ describe('ValidationManager', () => {
         .put(`/jobs/${matchingJob[0].id}`, JSON.stringify({ parameters: updatedCallbackParameters }))
         .reply(200, []);
 
-      const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs, addedCallbackUrl);
+      const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs, addedCallbackUrl);
 
       expect(result).toEqual(processingResponse);
     });
 
     it('should return an processing export job and create a new callback property', async () => {
-      const { crs, resourceId, version, dbId, roi } = dupParams;
+      const { crs, productId, version, catalogId, roi } = dupParams;
       const matchingJob = [{ ...inProgressJobsResponse[0] }];
       // Perform a deep copy of the parameters object
       const updatedCallbackParameters = JSON.parse(JSON.stringify(matchingJob[0].parameters)) as ExportJobParameters;
@@ -310,7 +330,7 @@ describe('ValidationManager', () => {
         .get('/jobs')
         .query(inProgressExportParams as Record<string, string>)
         .reply(200, matchingJob);
-      nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).reply(200, matchingJob[0]).persist();
+      nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).query({ shouldReturnTasks: false }).reply(200, matchingJob[0]).persist();
       nock(jobManagerURL)
         .get('/jobs')
         .query(pendingExportParams as Record<string, string>)
@@ -320,14 +340,14 @@ describe('ValidationManager', () => {
         .put(`/jobs/${matchingJob[0].id}`, JSON.stringify({ parameters: updatedCallbackParameters }))
         .reply(200, []);
 
-      const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs, addedCallbackUrl);
+      const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs, addedCallbackUrl);
 
       expect(result).toEqual(processingResponse);
     });
   });
 
   it('should return undefined when no duplicate jobs', async () => {
-    const { crs, resourceId, version, dbId, roi } = dupParams;
+    const { crs, productId, version, catalogId, roi } = dupParams;
     nock(jobManagerURL)
       .get('/jobs')
       .query(completedExportParams as Record<string, string>)
@@ -341,7 +361,7 @@ describe('ValidationManager', () => {
       .query(pendingExportParams as Record<string, string>)
       .reply(200, undefined);
 
-    const result = await validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs);
+    const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs);
 
     expect(result).toBeUndefined();
   });

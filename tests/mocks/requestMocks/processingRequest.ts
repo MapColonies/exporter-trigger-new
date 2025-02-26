@@ -4,7 +4,7 @@ import { CallbackUrlsTargetArray, TileFormatStrategy, TileOutputFormat } from '@
 import { JobExportDuplicationParams } from '@src/common/interfaces';
 
 export const processingDupParams = {
-  resourceId: 'SOME_NAME',
+  productId: 'SOME_NAME',
   version: '1.0',
   dbId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
   roi: {
@@ -32,10 +32,10 @@ export const processingDupParams = {
     ],
   },
   crs: 'EPSG:4326',
-} as JobExportDuplicationParams;
+} as unknown as JobExportDuplicationParams;
 
 export const inProgressExportParams = {
-  resourceId: processingDupParams.resourceId,
+  resourceId: processingDupParams.productId,
   version: processingDupParams.version,
   isCleaned: false,
   type: 'Export',
@@ -44,7 +44,7 @@ export const inProgressExportParams = {
 } as IFindJobsRequest;
 
 export const pendingExportParams = {
-  resourceId: processingDupParams.resourceId,
+  resourceId: processingDupParams.productId,
   version: processingDupParams.version,
   isCleaned: false,
   type: 'Export',
@@ -63,7 +63,6 @@ export const inProgressJobsResponse = [
       additionalParams: {
         fileNamesTemplates: {
           dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.gpkg',
-          metadataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.json',
         },
         packageRelativePath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.gpkg',
         relativeDirectoryPath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7',
@@ -158,7 +157,6 @@ export const inProgressJobsResponse = [
       additionalParams: {
         fileNamesTemplates: {
           dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_05T09_37_40_928Z.gpkg',
-          metadataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_05T09_37_40_928Z.json',
         },
         packageRelativePath: '65adbc306ad555ca82ca12df9153dee1/Orthophoto_SOME_NAME_1_0_0_2025_01_05T09_37_40_928Z.gpkg',
         relativeDirectoryPath: '65adbc306ad555ca82ca12df9153dee1',

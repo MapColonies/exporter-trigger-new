@@ -11,7 +11,7 @@ import {
   sanitizeBboxRequestMock,
   notIntersectedPolygon,
 } from '../../mocks/geometryMocks';
-import { checkFeatures, sanitizeBbox } from '../../../src/utils/geometry';
+import { checkFeaturesResemblance, sanitizeBbox } from '../../../src/utils/geometry';
 import { SERVICES } from '../../../src/common/constants';
 
 describe('Geometry Utils', () => {
@@ -24,11 +24,11 @@ describe('Geometry Utils', () => {
     jest.restoreAllMocks();
   });
 
-  describe('checkFeatures', () => {
+  describe('checkFeaturesResemblance', () => {
     it('should return true when the featureCollection are strictly equal and not single polygons', () => {
       const jobRoi = multiplePolygonsFeatureCollection;
       const exportRoi = multiplePolygonsFeatureCollection;
-      const response = checkFeatures(jobRoi, exportRoi);
+      const response = checkFeaturesResemblance(jobRoi, exportRoi);
 
       expect(response).toBe(true);
     });
@@ -36,7 +36,7 @@ describe('Geometry Utils', () => {
     it('should return true when the jobRoi and exportRoi are single polygons and export is contained', () => {
       const jobRoi = jobRoiFeature;
       const exportRoi = containedExportRoi;
-      const response = checkFeatures(jobRoi, exportRoi);
+      const response = checkFeaturesResemblance(jobRoi, exportRoi);
 
       expect(response).toBe(true);
     });
@@ -44,7 +44,7 @@ describe('Geometry Utils', () => {
     it('should return false when the exportRoi is not contained in jobRoi', () => {
       const jobRoi = jobRoiFeature;
       const exportRoi = notContainedExportRoi;
-      const response = checkFeatures(jobRoi, exportRoi);
+      const response = checkFeaturesResemblance(jobRoi, exportRoi);
 
       expect(response).toBe(false);
     });

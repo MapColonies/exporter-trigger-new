@@ -6,7 +6,7 @@ import { RasterProductTypes, RoiFeatureCollection, TileOutputFormat, Transparenc
 import { CreateExportRequest } from '@src/utils/zod/schemas';
 import { ICreateExportJobResponse, IGeometryRecord, JobExportDuplicationParams } from '../../src/common/interfaces';
 
-const dbId = '8b867544-2dab-43a1-be6e-f23ec83c19b4';
+const catalogId = '8b867544-2dab-43a1-be6e-f23ec83c19b4';
 const crs = 'EPSG:4326';
 
 const defaultRoi: RoiFeatureCollection = {
@@ -291,38 +291,38 @@ export const validateFeatureCollection = {
 
 // Constants
 export const dupParams = {
-  resourceId: 'SOME_NAME',
+  productId: 'SOME_NAME',
   version: '1.0',
-  dbId,
+  catalogId,
   roi: defaultRoi,
   crs,
 } as JobExportDuplicationParams;
 
 export const createExportRequestWithoutCallback: CreateExportRequest = {
-  dbId,
+  dbId: catalogId,
   crs,
   roi: defaultRoi,
 };
 
 export const createExportRequestNoRoiWithCallback: CreateExportRequest = {
-  dbId,
+  dbId: catalogId,
   callbackURLs: ['http://callback1'],
 };
 
 export const createExportRequestWithRoiAndCallback: CreateExportRequest = {
-  dbId,
+  dbId: catalogId,
   callbackURLs: ['http://example.getmap.com/callback', 'http://example.getmap.com/callback2'],
   roi: defaultRoi,
 };
 
 export const createExportRequestWithRoiAndNewCallback: CreateExportRequest = {
-  dbId,
+  dbId: catalogId,
   callbackURLs: ['http://example.getmap.com/callback3'],
   roi: defaultRoi,
 };
 
 export const createExportInvalidMaxZoomLevel: CreateExportRequest = {
-  dbId,
+  dbId: catalogId,
   crs,
   roi: {
     type: 'FeatureCollection',
@@ -340,7 +340,7 @@ export const createExportInvalidMaxZoomLevel: CreateExportRequest = {
 };
 
 export const createExportInvalidMinZoomLevel: CreateExportRequest = {
-  dbId,
+  dbId: catalogId,
   crs,
   roi: {
     type: 'FeatureCollection',
@@ -358,7 +358,7 @@ export const createExportInvalidMinZoomLevel: CreateExportRequest = {
 };
 
 export const createExportNotIntersectedPolygon: CreateExportRequest = {
-  dbId,
+  dbId: catalogId,
   crs,
   roi: notIntersectedPolygon,
 };

@@ -58,7 +58,7 @@ describe('JobManagerClient', () => {
     });
   });
 
-  describe('findExportJob', () => {
+  describe('findExportJobs', () => {
     it('should return completed job for export request', async () => {
       get = jest.fn();
       (jobManagerClient as unknown as { get: unknown }).get = get
@@ -66,33 +66,30 @@ describe('JobManagerClient', () => {
         .mockResolvedValueOnce(completedJobResponse[0])
         .mockResolvedValueOnce(completedJobResponse[1]);
 
-      const response = await jobManagerClient.findExportJob(OperationStatus.COMPLETED, duplicationParams);
+      const response = await jobManagerClient.findExportJobs(OperationStatus.COMPLETED, duplicationParams);
       expect(get).toHaveBeenCalledTimes(3);
-      expect(response).toEqual(completedJobResponse[0]);
+      expect(response).toEqual(completedJobResponse);
     });
 
     it('should return undefined on roi not contained in a completed job', async () => {
       const notContainedDuplicationParams: JobExportDuplicationParams = { ...duplicationParams, roi: notContainedRoi };
       get = jest.fn();
-      (jobManagerClient as unknown as { get: unknown }).get = get
-        .mockResolvedValueOnce(completedJobResponse)
-        .mockResolvedValueOnce(completedJobResponse[0])
-        .mockResolvedValueOnce(completedJobResponse[1]);
-      const response = await jobManagerClient.findExportJob(OperationStatus.COMPLETED, notContainedDuplicationParams);
-      expect(get).toHaveBeenCalledTimes(3);
-      expect(response).toBeUndefined();
+      (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue([]);
+      const response = await jobManagerClient.findExportJobs(OperationStatus.COMPLETED, notContainedDuplicationParams);
+      expect(get).toHaveBeenCalledTimes(1);
+      expect(response).toStrictEqual([]);
     });
 
     it('should return undefined when no completed jobs where found', async () => {
       get = jest.fn();
       (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(undefined);
-      const response = await jobManagerClient.findExportJob(OperationStatus.COMPLETED, duplicationParams);
+      const response = await jobManagerClient.findExportJobs(OperationStatus.COMPLETED, duplicationParams);
       expect(get).toHaveBeenCalledTimes(1);
       expect(response).toBeUndefined();
     });
   });
 
-  describe('validateAndUpdateExpiration', () => {
+  describe('updateJobExpirationDate', () => {
     it('should update expirationDate', async () => {
       get = jest.fn();
       put = jest.fn();
@@ -100,7 +97,7 @@ describe('JobManagerClient', () => {
       (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(completedJobResponse[0]);
 
       const action = async () => {
-        await jobManagerClient.validateAndUpdateExpiration(completedJobResponse[0].id);
+        await jobManagerClient.updateJobExpirationDate(completedJobResponse[0].id);
       };
       await expect(action()).resolves.not.toThrow();
       expect(get).toHaveBeenCalledTimes(1);
@@ -113,7 +110,7 @@ describe('JobManagerClient', () => {
       (jobManagerClient as unknown as { put: unknown }).put = put.mockResolvedValue(undefined);
       (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(completedJobResponse[1]);
       const action = async () => {
-        await jobManagerClient.validateAndUpdateExpiration(completedJobResponse[0].id);
+        await jobManagerClient.updateJobExpirationDate(completedJobResponse[0].id);
       };
       await expect(action()).resolves.not.toThrow();
       expect(get).toHaveBeenCalledTimes(1);

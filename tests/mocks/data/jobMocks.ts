@@ -25,7 +25,6 @@ export const inProgressJobResponse: JobExportResponse = {
     additionalParams: {
       fileNamesTemplates: {
         dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_05T09_37_40_928Z.gpkg',
-        metadataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_05T09_37_40_928Z.json',
       },
       packageRelativePath: '65adbc306ad555ca82ca12df9153dee1/Orthophoto_SOME_NAME_1_0_0_2025_01_05T09_37_40_928Z.gpkg',
       relativeDirectoryPath: '65adbc306ad555ca82ca12df9153dee1',
@@ -76,7 +75,6 @@ export const inProgressJobResponse: JobExportResponse = {
   isCleaned: false,
   priority: 0,
   internalId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
-  productName: 'SOME_NAME',
   productType: 'Orthophoto',
   additionalIdentifiers: '65adbc306ad555ca82ca12df9153dee1',
   taskCount: 1,
@@ -91,9 +89,9 @@ export const inProgressJobResponse: JobExportResponse = {
 };
 
 export const duplicationParams: JobExportDuplicationParams = {
-  resourceId: 'SOME_NAME',
+  productId: 'SOME_NAME',
   version: '1.0',
-  dbId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
+  catalogId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
   roi: {
     type: 'FeatureCollection',
     features: [
@@ -184,8 +182,6 @@ export const completedJobResponse = [
         jobId: '8eddc842-64ee-4e90-b3a5-b10d9e86acb2',
         links: {
           dataURI: 'http://download-service/downloads/63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_22_56_272Z.gpkg',
-          metadataURI:
-            'http://download-service/downloads/63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_22_56_272Z.json',
         },
         status: OperationStatus.COMPLETED,
         fileSize: 77824,
@@ -210,7 +206,6 @@ export const completedJobResponse = [
       additionalParams: {
         fileNamesTemplates: {
           dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.gpkg',
-          metadataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.json',
         },
         packageRelativePath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.gpkg',
         relativeDirectoryPath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7',
@@ -312,8 +307,6 @@ export const completedJobResponse = [
         jobId: '8eddc842-64ee-4e90-b3a5-b10d9e86acb1',
         links: {
           dataURI: 'http://download-service/downloads/63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_22_56_272Z.gpkg',
-          metadataURI:
-            'http://download-service/downloads/63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_22_56_272Z.json',
         },
         status: OperationStatus.COMPLETED,
         fileSize: 77824,
@@ -338,7 +331,6 @@ export const completedJobResponse = [
       additionalParams: {
         fileNamesTemplates: {
           dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.gpkg',
-          metadataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.json',
         },
         packageRelativePath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_02T12_00_02_621Z.gpkg',
         relativeDirectoryPath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7',
@@ -430,7 +422,7 @@ export const createExportData: IExportInitRequest = {
       },
     ],
   },
-  callbacks: [
+  callbackUrls: [
     {
       url: 'http://example.getmap.com/callback',
     },
@@ -440,13 +432,12 @@ export const createExportData: IExportInitRequest = {
   ],
   fileNamesTemplates: {
     dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_06T09_29_04_933Z.gpkg',
-    metadataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_06T09_29_04_933Z.json',
   },
   relativeDirectoryPath: 'e315e6d204d92b1d2dbfdaab96ff2a7e',
   packageRelativePath: 'e315e6d204d92b1d2dbfdaab96ff2a7e/Orthophoto_SOME_NAME_1_0_0_2025_01_06T09_29_04_933Z.gpkg',
-  dbId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
+  catalogId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
   version: '1.0',
-  cswProductId: 'SOME_NAME',
+  productId: 'SOME_NAME',
   productType: RasterProductTypes.ORTHOPHOTO,
   priority: 0,
   description: 'This is roi exporting example',
@@ -457,14 +448,14 @@ export const createExportData: IExportInitRequest = {
 
 export function generateCreateJobRequest(createExportData: IExportInitRequest): CreateExportJobBody {
   return {
-    resourceId: createExportData.cswProductId,
+    resourceId: createExportData.productId,
     version: createExportData.version,
     type: 'Export',
     domain: 'RASTER',
     parameters: {
       exportInputParams: {
         roi: createExportData.roi,
-        callbackUrls: createExportData.callbacks,
+        callbackUrls: createExportData.callbackUrls,
         crs: 'EPSG:4326',
       },
       additionalParams: {
@@ -476,9 +467,8 @@ export function generateCreateJobRequest(createExportData: IExportInitRequest): 
         gpkgEstimatedSize: createExportData.gpkgEstimatedSize,
       },
     },
-    internalId: createExportData.dbId,
+    internalId: createExportData.catalogId,
     productType: createExportData.productType,
-    productName: createExportData.cswProductId,
     priority: createExportData.priority,
     description: createExportData.description,
     status: OperationStatus.PENDING,
@@ -536,7 +526,6 @@ export const initExportRequestBody = {
     additionalParams: {
       fileNamesTemplates: {
         dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_09T10_04_06_711Z.gpkg',
-        metadataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_09T10_04_06_711Z.json',
       },
       relativeDirectoryPath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7',
       packageRelativePath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_09T10_04_06_711Z.gpkg',
@@ -547,7 +536,6 @@ export const initExportRequestBody = {
   },
   internalId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
   productType: RasterProductTypes.ORTHOPHOTO,
-  productName: 'SOME_NAME',
   priority: 1000,
   description: undefined,
   status: OperationStatus.PENDING,
@@ -617,7 +605,6 @@ export const initExportRequestBodyNoRoiWithCallback = {
     additionalParams: {
       fileNamesTemplates: {
         dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_09T12_39_36_961Z.gpkg',
-        metadataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_09T12_39_36_961Z.json',
       },
       relativeDirectoryPath: 'b30e5a99b78a6c10e65164fd54b14ad0',
       packageRelativePath: 'b30e5a99b78a6c10e65164fd54b14ad0/Orthophoto_SOME_NAME_1_0_0_2025_01_09T12_39_36_961Z.gpkg',
@@ -628,7 +615,6 @@ export const initExportRequestBodyNoRoiWithCallback = {
   },
   internalId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
   productType: 'Orthophoto',
-  productName: 'SOME_NAME',
   priority: 1000,
   description: undefined,
   status: 'Pending',
