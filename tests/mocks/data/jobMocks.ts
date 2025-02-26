@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-magic-numbers */
-import { ICreateJobResponse, OperationStatus } from '@map-colonies/mc-priority-queue';
+import { OperationStatus } from '@map-colonies/mc-priority-queue';
 import { RasterProductTypes, RoiFeatureCollection, TileFormatStrategy, TileOutputFormat } from '@map-colonies/raster-shared';
 import {
   CreateExportJobBody,
@@ -485,7 +485,7 @@ export function generateCreateJobRequest(createExportData: IExportInitRequest): 
   };
 }
 
-export const createJobResponse: ICreateJobResponse = {
+export const createJobResponse = {
   id: '15598cfc-a354-4eaa-b3f3-6029d40ddf6c',
 };
 
