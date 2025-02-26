@@ -147,7 +147,7 @@ export class ValidationManager {
 
   @withSpanV4
   private findDuplicatedExportJob(jobs: JobExportResponse[] | undefined, jobParams: JobExportDuplicationParams): JobExportResponse | undefined {
-    if (jobs) {
+    if (jobs && jobs.length > 0) {
       const duplicateJob = jobs.find(
         (job) =>
           job.internalId === jobParams.catalogId &&
