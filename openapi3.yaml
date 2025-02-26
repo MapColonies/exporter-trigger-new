@@ -431,14 +431,10 @@ components:
       description: gpkg links - the geoPackage + metadata.json
       required:
         - dataURI
-        - metadataURI
       properties:
         dataURI:
           type: string
           description: Url to download the gpkg
-        metadataURI:
-          type: string
-          description: Url to download the gpkg's metadata.json
     Point2D:
       type: array
       maxItems: 2
