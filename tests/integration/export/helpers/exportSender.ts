@@ -8,4 +8,8 @@ export class ExportSender {
   public async export(body: CreateExportRequest): Promise<supertest.Response> {
     return supertest.agent(this.app).post(`/export`).set('Content-Type', 'application/json').send(body);
   }
+
+  public async getStatusByJobId(jobId: string): Promise<supertest.Response> {
+    return supertest.agent(this.app).get(`/export/${jobId}/status`).set('Content-Type', 'application/json').send();
+  }
 }

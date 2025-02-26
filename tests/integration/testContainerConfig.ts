@@ -4,7 +4,6 @@ import { trace } from '@opentelemetry/api';
 import { SERVICES } from '@common/constants';
 import { InjectionObject } from '@common/dependencyRegistration';
 import { STORAGE_ROUTER_SYMBOL, storageRouterFactory } from '@src/storage/routes/storageRouter';
-import { EXPORT_STATUS_ROUTER_SYMBOL, exportStatusRouterFactory } from '@src/tasks/routes/tasksRouter';
 import { EXPORT_ROUTER_SYMBOL, exportRouterFactory } from '@src/export/routes/exportRouter';
 import { configMock, getMock, hasMock, registerDefaultConfig } from '../mocks/config';
 
@@ -15,7 +14,6 @@ function getTestContainerConfig(): InjectionObject<unknown>[] {
     { token: SERVICES.CONFIG, provider: { useValue: configMock } },
     { token: SERVICES.TRACER, provider: { useValue: trace.getTracer('testTracer') } },
     { token: STORAGE_ROUTER_SYMBOL, provider: { useFactory: storageRouterFactory } },
-    { token: EXPORT_STATUS_ROUTER_SYMBOL, provider: { useFactory: exportStatusRouterFactory } },
     { token: EXPORT_ROUTER_SYMBOL, provider: { useFactory: exportRouterFactory } },
   ];
 }
