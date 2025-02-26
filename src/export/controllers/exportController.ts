@@ -6,9 +6,10 @@ import { CallbackExportResponse } from '@map-colonies/raster-shared';
 import { CreateExportRequest, createExportRequestSchema } from '@src/utils/zod/schemas';
 import { SERVICES } from '../../common/constants';
 import { ExportManager } from '../models/exportManager';
-import { ICreateExportJobResponse } from '../../common/interfaces';
+import { ICreateExportJobResponse, IJobStatusResponse } from '../../common/interfaces';
 
 type CreateExportHandler = RequestHandler<undefined, ICreateExportJobResponse | CallbackExportResponse, unknown>;
+type GetStatusByJobIdHandler = RequestHandler<{ jobId: string }, IJobStatusResponse, string>;
 
 @injectable()
 export class ExportController {
@@ -23,6 +24,16 @@ export class ExportController {
       this.logger.debug(userInput, `Creating package with user input`);
       const jobCreated = await this.manager.createExport(userInput);
       return res.status(httpStatus.OK).json(jobCreated);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  public getStatusByJobId: GetStatusByJobIdHandler = async (req, res, next) => {
+    const jobId: string = req.params.jobId;
+    try {
+      const taskStatus = await this.manager.getJobStatusByJobId(jobId);
+      return res.status(httpStatus.OK).json(taskStatus);
     } catch (err) {
       next(err);
     }

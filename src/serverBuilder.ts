@@ -12,7 +12,6 @@ import { collectMetricsExpressMiddleware } from '@map-colonies/telemetry/prom-me
 import { ConfigType } from '@common/config';
 import { SERVICES } from '@common/constants';
 import { STORAGE_ROUTER_SYMBOL } from './storage/routes/storageRouter';
-import { EXPORT_STATUS_ROUTER_SYMBOL } from './tasks/routes/tasksRouter';
 import { EXPORT_ROUTER_SYMBOL } from './export/routes/exportRouter';
 
 @injectable()
@@ -23,7 +22,6 @@ export class ServerBuilder {
     @inject(SERVICES.CONFIG) private readonly config: ConfigType,
     @inject(SERVICES.LOGGER) private readonly logger: Logger,
     @inject(STORAGE_ROUTER_SYMBOL) private readonly createStorageRouter: Router,
-    @inject(EXPORT_STATUS_ROUTER_SYMBOL) private readonly tasksRouter: Router,
     @inject(EXPORT_ROUTER_SYMBOL) private readonly createPackageRouter: Router
   ) {
     this.serverInstance = express();
@@ -48,7 +46,6 @@ export class ServerBuilder {
 
   private buildRoutes(): void {
     this.serverInstance.use('/storage', this.createStorageRouter);
-    this.serverInstance.use('/tasks', this.tasksRouter);
     this.serverInstance.use('/export', this.createPackageRouter);
     this.buildDocsRoutes();
   }

@@ -6,7 +6,7 @@ import { degreesPerPixelToZoomLevel } from '@map-colonies/mc-utils';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
 import { feature, featureCollection } from '@turf/helpers';
 import { withSpanAsyncV4 } from '@map-colonies/telemetry';
-import { IConfig, ICreateExportJobResponse, IExportInitRequest, IGeometryRecord } from '@src/common/interfaces';
+import { IConfig, ICreateExportJobResponse, IExportInitRequest, IGeometryRecord, IJobStatusResponse } from '@src/common/interfaces';
 import { MultiPolygon, Polygon } from 'geojson';
 import { calculateEstimateGpkgSize, parseFeatureCollection } from '@src/common/utils';
 import {
@@ -17,9 +17,11 @@ import {
   CallbackUrls,
   RoiProperties,
   RasterProductTypes,
+  RoiFeatureCollection,
 } from '@map-colonies/raster-shared';
 import { v4 as uuidv4 } from 'uuid';
 import { CreateExportRequest } from '@src/utils/zod/schemas';
+import { LayerMetadata } from '@map-colonies/mc-model-types';
 import { JobManagerWrapper } from '../../clients/jobManagerWrapper';
 import { DEFAULT_CRS, DEFAULT_PRIORITY, SERVICES } from '../../common/constants';
 import { ValidationManager } from './validationManager';
@@ -50,26 +52,12 @@ export class ExportManager {
 
     if (!roi) {
       // convert and wrap layer's footprint to featureCollection
-      const layerMaxResolutionDeg = layerMetadata.maxResolutionDeg;
-      const layerMinResolutionDeg = layerMetadata.minResolutionDeg;
-      const layerFeature = feature<Polygon | MultiPolygon, RoiProperties>(layerMetadata.footprint as Polygon | MultiPolygon, {
-        maxResolutionDeg: layerMaxResolutionDeg,
-        minResolutionDeg: layerMinResolutionDeg,
-      });
-      roi = featureCollection([layerFeature]);
-      this.logger.info({
-        catalogId: dbId,
-        productId: layerMetadata.productId,
-        productVersion: layerMetadata.productVersion,
-        productType: layerMetadata.productType,
-        callbackURLs,
-        msg: `ROI not provided, will use default layer's geometry`,
-      });
+      roi = this.calculateRoi(layerMetadata);
     }
 
     const { productId: resourceId, productVersion: version, maxResolutionDeg: srcRes } = layerMetadata;
-
     const productType = layerMetadata.productType as RasterProductTypes;
+    const callbacks = callbackURLs ? callbackURLs.map((url) => <CallbackUrls>{ url }) : undefined;
     const maxZoom = degreesPerPixelToZoomLevel(srcRes);
 
     // ROI vs layer validation section - zoom + geo intersection
@@ -80,21 +68,8 @@ export class ExportManager {
       srcRes
     );
 
-    const callbacks = callbackURLs ? callbackURLs.map((url) => <CallbackUrls>{ url }) : undefined;
-    const duplicationExist = await this.validationManager.checkForExportDuplicate(resourceId, version, dbId, roi, crs ?? DEFAULT_CRS, callbacks);
-
-    if (duplicationExist && duplicationExist.status === OperationStatus.COMPLETED) {
-      const callbackParam = duplicationExist as CallbackExportResponse;
-      this.logger.info({
-        jobStatus: callbackParam.status,
-        jobId: callbackParam.jobId,
-        catalogId: callbackParam.recordCatalogId,
-        msg: `Found relevant cache for export request`,
-      });
-      return duplicationExist;
-    } else if (duplicationExist) {
-      const jobResponse = duplicationExist as ICreateExportJobResponse;
-      this.logger.info({ jobId: jobResponse.jobId, status: jobResponse.status, msg: `Found exists relevant In-Progress job for export request` });
+    const duplicationExist = await this.findJobDuplications(resourceId, version, dbId, roi, crs ?? DEFAULT_CRS, callbacks);
+    if (duplicationExist) {
       return duplicationExist;
     }
 
@@ -134,6 +109,18 @@ export class ExportManager {
     return jobCreated;
   }
 
+  @withSpanAsyncV4
+  public async getJobStatusByJobId(jobId: string): Promise<IJobStatusResponse> {
+    const job = await this.jobManagerClient.getJobByJobId(jobId);
+
+    const statusResponse: IJobStatusResponse = {
+      percentage: job.percentage,
+      status: job.status,
+    };
+    this.logger.debug({ msg: `retrieved job: ${jobId},with percentage: ${job.percentage} and status: ${job.status}` });
+    return statusResponse;
+  }
+
   private getSeparator(): string {
     return this.tilesProvider === 'S3' ? '/' : sep;
   }
@@ -143,5 +130,49 @@ export class ExportManager {
     let currentDateStr = new Date().toJSON();
     currentDateStr = `${currentDateStr}`.replaceAll('-', '_').replaceAll('.', '_').replaceAll(':', '_');
     return `${productType}_${productId}_${productVersion.replaceAll('.', '_')}_${maxZoom}_${currentDateStr}`;
+  }
+
+  private async findJobDuplications(
+    resourceId: string,
+    version: string,
+    catalogId: string,
+    roi: RoiFeatureCollection,
+    crs: string,
+    callbacks?: CallbackUrls[]
+  ): Promise<CallbackExportResponse | ICreateExportJobResponse | undefined> {
+    const duplicationExist = await this.validationManager.checkForExportDuplicate(resourceId, version, catalogId, roi, crs, callbacks);
+
+    if (duplicationExist && duplicationExist.status === OperationStatus.COMPLETED) {
+      const callbackParam = duplicationExist as CallbackExportResponse;
+      this.logger.info({
+        jobStatus: callbackParam.status,
+        jobId: callbackParam.jobId,
+        catalogId: callbackParam.recordCatalogId,
+        msg: `Found relevant cache for export request`,
+      });
+    } else if (duplicationExist) {
+      const jobResponse = duplicationExist as ICreateExportJobResponse;
+      this.logger.info({ jobId: jobResponse.jobId, status: jobResponse.status, msg: `Found exists relevant In-Progress job for export request` });
+    }
+    return duplicationExist;
+  }
+
+  private calculateRoi(layerMetadata: LayerMetadata): RoiFeatureCollection {
+    // convert and wrap layer's footprint to featureCollection
+    const layerMaxResolutionDeg = layerMetadata.maxResolutionDeg;
+    const layerMinResolutionDeg = layerMetadata.minResolutionDeg;
+    const layerFeature = feature<Polygon | MultiPolygon, RoiProperties>(layerMetadata.footprint as Polygon | MultiPolygon, {
+      maxResolutionDeg: layerMaxResolutionDeg,
+      minResolutionDeg: layerMinResolutionDeg,
+    });
+    const roi = featureCollection([layerFeature]);
+    this.logger.info({
+      catalogId: layerMetadata.id,
+      productId: layerMetadata.productId,
+      productVersion: layerMetadata.productVersion,
+      productType: layerMetadata.productType,
+      msg: `ROI not provided, will use default layer's geometry`,
+    });
+    return roi;
   }
 }
