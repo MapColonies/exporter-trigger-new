@@ -1,21 +1,19 @@
 import jsLogger from '@map-colonies/js-logger';
 import { trace } from '@opentelemetry/api';
 import { container } from 'tsyringe';
-
-import {
-  completedJobResponse,
-  createExportData,
-  createJobResponse,
-  duplicationParams,
-  generateCreateJobRequest,
-  getJobStatusByIdResponse,
-  inProgressJobResponse,
-  notContainedRoi,
-} from '@tests/mocks/data/jobMocks';
 import { NotFoundError } from '@map-colonies/error-types';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
 import { JobExportDuplicationParams } from '@src/common/interfaces';
-import { inProgressJobsResponse } from '@tests/mocks/requestMocks/processingRequest';
+import { inProgressJobsResponse } from '@tests/mocks/processingRequest';
+import { completedExportJobsResponse } from '@tests/mocks/completedReqest';
+import {
+  createExportData,
+  createJobResponse,
+  dupParams,
+  generateCreateJobRequest,
+  getJobStatusByIdResponse,
+  notContainedRoi,
+} from '@tests/mocks/data';
 import { SERVICES } from '../../../src/common/constants';
 import { registerDefaultConfig } from '../../mocks/config';
 import { JobManagerWrapper } from '../../../src/clients/jobManagerWrapper';
@@ -44,7 +42,7 @@ describe('JobManagerClient', () => {
     it('should return job percentage and status by id', async () => {
       get = jest.fn();
       (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(getJobStatusByIdResponse);
-      const response = await jobManagerClient.getJobByJobId(inProgressJobResponse.id);
+      const response = await jobManagerClient.getJobByJobId(inProgressJobsResponse[0].id);
       expect(get).toHaveBeenCalledTimes(1);
       expect(response).toBeDefined();
     });
@@ -52,7 +50,7 @@ describe('JobManagerClient', () => {
     it('should throw NotFound error on non-existed job', async () => {
       get = jest.fn();
       (jobManagerClient as unknown as { get: unknown }).get = get.mockRejectedValue(new NotFoundError('Job not found'));
-      const action = async () => jobManagerClient.getJobByJobId(inProgressJobResponse.id);
+      const action = async () => jobManagerClient.getJobByJobId(inProgressJobsResponse[0].id);
       await expect(action()).rejects.toThrow(NotFoundError);
       expect(get).toHaveBeenCalledTimes(1);
     });
@@ -62,17 +60,17 @@ describe('JobManagerClient', () => {
     it('should return completed job for export request', async () => {
       get = jest.fn();
       (jobManagerClient as unknown as { get: unknown }).get = get
-        .mockResolvedValueOnce(completedJobResponse)
-        .mockResolvedValueOnce(completedJobResponse[0])
-        .mockResolvedValueOnce(completedJobResponse[1]);
+        .mockResolvedValueOnce(completedExportJobsResponse)
+        .mockResolvedValueOnce(completedExportJobsResponse[0])
+        .mockResolvedValueOnce(completedExportJobsResponse[1]);
 
-      const response = await jobManagerClient.findExportJobs(OperationStatus.COMPLETED, duplicationParams);
+      const response = await jobManagerClient.findExportJobs(OperationStatus.COMPLETED, dupParams);
       expect(get).toHaveBeenCalledTimes(3);
-      expect(response).toEqual(completedJobResponse);
+      expect(response).toEqual(completedExportJobsResponse);
     });
 
     it('should return undefined on roi not contained in a completed job', async () => {
-      const notContainedDuplicationParams: JobExportDuplicationParams = { ...duplicationParams, roi: notContainedRoi };
+      const notContainedDuplicationParams: JobExportDuplicationParams = { ...dupParams, roi: notContainedRoi };
       get = jest.fn();
       (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue([]);
       const response = await jobManagerClient.findExportJobs(OperationStatus.COMPLETED, notContainedDuplicationParams);
@@ -83,7 +81,7 @@ describe('JobManagerClient', () => {
     it('should return undefined when no completed jobs where found', async () => {
       get = jest.fn();
       (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(undefined);
-      const response = await jobManagerClient.findExportJobs(OperationStatus.COMPLETED, duplicationParams);
+      const response = await jobManagerClient.findExportJobs(OperationStatus.COMPLETED, dupParams);
       expect(get).toHaveBeenCalledTimes(1);
       expect(response).toBeUndefined();
     });
@@ -94,10 +92,10 @@ describe('JobManagerClient', () => {
       get = jest.fn();
       put = jest.fn();
       (jobManagerClient as unknown as { put: unknown }).put = put.mockResolvedValue(undefined);
-      (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(completedJobResponse[0]);
+      (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(completedExportJobsResponse[1]);
 
       const action = async () => {
-        await jobManagerClient.updateJobExpirationDate(completedJobResponse[0].id);
+        await jobManagerClient.updateJobExpirationDate(completedExportJobsResponse[1].id);
       };
       await expect(action()).resolves.not.toThrow();
       expect(get).toHaveBeenCalledTimes(1);
@@ -108,9 +106,9 @@ describe('JobManagerClient', () => {
       get = jest.fn();
       put = jest.fn();
       (jobManagerClient as unknown as { put: unknown }).put = put.mockResolvedValue(undefined);
-      (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(completedJobResponse[1]);
+      (jobManagerClient as unknown as { get: unknown }).get = get.mockResolvedValue(completedExportJobsResponse[0]);
       const action = async () => {
-        await jobManagerClient.updateJobExpirationDate(completedJobResponse[0].id);
+        await jobManagerClient.updateJobExpirationDate(completedExportJobsResponse[0].id);
       };
       await expect(action()).resolves.not.toThrow();
       expect(get).toHaveBeenCalledTimes(1);

@@ -2,9 +2,17 @@
 import { RecordType } from '@map-colonies/mc-model-types';
 import { BBox, Polygon } from 'geojson';
 import { OperationStatus } from '@map-colonies/mc-priority-queue';
-import { RasterProductTypes, RoiFeatureCollection, TileOutputFormat, Transparency } from '@map-colonies/raster-shared';
+import { RasterProductTypes, RoiFeatureCollection, TileFormatStrategy, TileOutputFormat, Transparency } from '@map-colonies/raster-shared';
 import { CreateExportRequest } from '@src/utils/zod/schemas';
-import { ICreateExportJobResponse, IGeometryRecord, JobExportDuplicationParams } from '../../src/common/interfaces';
+import {
+  CreateExportJobBody,
+  ICreateExportJobResponse,
+  IExportInitRequest,
+  IGeometryRecord,
+  IJobStatusResponse,
+  JobExportDuplicationParams,
+} from '../../src/common/interfaces';
+import { inProgressJobsResponse } from './processingRequest';
 
 const catalogId = '8b867544-2dab-43a1-be6e-f23ec83c19b4';
 const crs = 'EPSG:4326';
@@ -53,6 +61,270 @@ const notIntersectedPolygon: RoiFeatureCollection = {
             [34.94222600858711, 32.36620011311199],
           ],
         ],
+      },
+    },
+  ],
+};
+
+export const getJobStatusByIdResponse: IJobStatusResponse = {
+  percentage: inProgressJobsResponse[0].percentage,
+  status: OperationStatus.IN_PROGRESS,
+};
+
+export const notContainedRoi: RoiFeatureCollection = {
+  type: 'FeatureCollection',
+  features: [
+    {
+      type: 'Feature',
+      properties: {
+        maxResolutionDeg: 0.703125,
+        minResolutionDeg: 0.703125,
+      },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [-180, -90],
+            [-180, 90],
+            [180, 90],
+            [180, -90],
+            [-180, -90],
+          ],
+        ],
+      },
+    },
+  ],
+};
+
+export const createExportData: IExportInitRequest = {
+  crs: 'EPSG:4326',
+  roi: {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: {
+          maxResolutionDeg: 0.703125,
+          minResolutionDeg: 0.703125,
+        },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [-180, -90],
+              [-180, 90],
+              [180, 90],
+              [180, -90],
+              [-180, -90],
+            ],
+          ],
+        },
+      },
+    ],
+  },
+  callbackUrls: [
+    {
+      url: 'http://example.getmap.com/callback',
+    },
+    {
+      url: 'http://example.getmap.com/callback2',
+    },
+  ],
+  fileNamesTemplates: {
+    dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_06T09_29_04_933Z.gpkg',
+  },
+  relativeDirectoryPath: 'e315e6d204d92b1d2dbfdaab96ff2a7e',
+  packageRelativePath: 'e315e6d204d92b1d2dbfdaab96ff2a7e/Orthophoto_SOME_NAME_1_0_0_2025_01_06T09_29_04_933Z.gpkg',
+  catalogId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
+  version: '1.0',
+  productId: 'SOME_NAME',
+  productType: RasterProductTypes.ORTHOPHOTO,
+  priority: 0,
+  description: 'This is roi exporting example',
+  targetFormat: TileOutputFormat.PNG,
+  outputFormatStrategy: 'mixed',
+  gpkgEstimatedSize: 1111,
+};
+
+export function generateCreateJobRequest(createExportData: IExportInitRequest): CreateExportJobBody {
+  return {
+    resourceId: createExportData.productId,
+    version: createExportData.version,
+    type: 'Export',
+    domain: 'RASTER',
+    parameters: {
+      exportInputParams: {
+        roi: createExportData.roi,
+        callbackUrls: createExportData.callbackUrls,
+        crs: 'EPSG:4326',
+      },
+      additionalParams: {
+        fileNamesTemplates: createExportData.fileNamesTemplates,
+        relativeDirectoryPath: createExportData.relativeDirectoryPath,
+        packageRelativePath: createExportData.packageRelativePath,
+        outputFormatStrategy: createExportData.outputFormatStrategy,
+        targetFormat: createExportData.targetFormat,
+        gpkgEstimatedSize: createExportData.gpkgEstimatedSize,
+      },
+    },
+    internalId: createExportData.catalogId,
+    productType: createExportData.productType,
+    priority: createExportData.priority,
+    description: createExportData.description,
+    status: OperationStatus.PENDING,
+    percentage: 0,
+    additionalIdentifiers: createExportData.relativeDirectoryPath,
+    tasks: [
+      {
+        type: 'init',
+        parameters: {
+          blockDuplication: true,
+        },
+      },
+    ],
+  };
+}
+
+export const createJobResponse = {
+  id: '15598cfc-a354-4eaa-b3f3-6029d40ddf6c',
+};
+
+export const initExportRequestBody = {
+  resourceId: 'SOME_NAME',
+  version: '1.0',
+  type: 'Export',
+  domain: 'RASTER',
+  parameters: {
+    exportInputParams: {
+      roi: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: {
+              maxResolutionDeg: 0.703125,
+              minResolutionDeg: 0.703125,
+            },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [34.85671849225366, 32.306563240778644],
+                  [34.858090125180894, 32.30241218787266],
+                  [34.862337900781455, 32.30263664191864],
+                  [34.86154145051941, 32.30708703329364],
+                  [34.85671849225366, 32.306563240778644],
+                ],
+              ],
+            },
+          },
+        ],
+      },
+      callbackUrls: undefined,
+      crs: 'EPSG:4326',
+    },
+    additionalParams: {
+      fileNamesTemplates: {
+        dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_09T10_04_06_711Z.gpkg',
+      },
+      relativeDirectoryPath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7',
+      packageRelativePath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7/Orthophoto_SOME_NAME_1_0_0_2025_01_09T10_04_06_711Z.gpkg',
+      outputFormatStrategy: TileFormatStrategy.MIXED,
+      targetFormat: TileOutputFormat.PNG,
+      gpkgEstimatedSize: 12500,
+    },
+  },
+  internalId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
+  productType: RasterProductTypes.ORTHOPHOTO,
+  priority: 1000,
+  description: undefined,
+  status: OperationStatus.PENDING,
+  percentage: 0,
+  additionalIdentifiers: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7',
+  tasks: [
+    {
+      type: 'init',
+      parameters: {
+        blockDuplication: true,
+      },
+    },
+  ],
+};
+
+export const initExportResponse = {
+  id: 'ef1a76e2-3a4b-49e6-90ee-e97c402dd3d8',
+};
+
+export const initExportRequestBodyNoRoiWithCallback = {
+  resourceId: 'SOME_NAME',
+  version: '1.0',
+  type: 'Export',
+  domain: 'RASTER',
+  parameters: {
+    exportInputParams: {
+      roi: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: {
+              maxResolutionDeg: 0.703125,
+              minResolutionDeg: 0.703125,
+            },
+            geometry: {
+              type: 'Polygon',
+              bbox: [34.85149443279957, 32.29430955805424, 34.86824157112912, 32.30543192283443],
+              coordinates: [
+                [
+                  [34.85149445922802, 32.29430958448269],
+                  [34.85149443279957, 32.2943098528153],
+                  [34.85149443279957, 32.305431628073364],
+                  [34.85149445922802, 32.30543189640598],
+                  [34.851494727560635, 32.30543192283443],
+                  [34.86824127636805, 32.30543192283443],
+                  [34.868241544700666, 32.30543189640598],
+                  [34.86824157112912, 32.305431628073364],
+                  [34.86824157112912, 32.2943098528153],
+                  [34.868241544700666, 32.29430958448269],
+                  [34.86824127636805, 32.29430955805424],
+                  [34.851494727560635, 32.29430955805424],
+                  [34.85149445922802, 32.29430958448269],
+                ],
+              ],
+            },
+          },
+        ],
+      },
+      callbackUrls: [
+        {
+          url: 'http://callback1',
+        },
+      ],
+      crs: 'EPSG:4326',
+    },
+    additionalParams: {
+      fileNamesTemplates: {
+        dataURI: 'Orthophoto_SOME_NAME_1_0_0_2025_01_09T12_39_36_961Z.gpkg',
+      },
+      relativeDirectoryPath: 'b30e5a99b78a6c10e65164fd54b14ad0',
+      packageRelativePath: 'b30e5a99b78a6c10e65164fd54b14ad0/Orthophoto_SOME_NAME_1_0_0_2025_01_09T12_39_36_961Z.gpkg',
+      outputFormatStrategy: TileFormatStrategy.MIXED,
+      targetFormat: TileOutputFormat.PNG,
+      gpkgEstimatedSize: 12500,
+    },
+  },
+  internalId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
+  productType: 'Orthophoto',
+  priority: 1000,
+  description: undefined,
+  status: 'Pending',
+  percentage: 0,
+  additionalIdentifiers: 'b30e5a99b78a6c10e65164fd54b14ad0',
+  tasks: [
+    {
+      type: 'init',
+      parameters: {
+        blockDuplication: true,
       },
     },
   ],
@@ -170,6 +442,8 @@ export const fcTooHighResolution: RoiFeatureCollection = {
 };
 
 export const fc1: RoiFeatureCollection = {
+  ...fcTooHighResolution,
+
   type: 'FeatureCollection',
   features: [
     {

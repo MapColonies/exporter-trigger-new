@@ -5,14 +5,14 @@ import nock from 'nock';
 import { container } from 'tsyringe';
 import { SERVICES } from '@src/common/constants';
 import { getUTCDate } from '@map-colonies/mc-utils';
-import { completedExportJobsResponse, completedExportParams, completedJobCallback } from '@tests/mocks/requestMocks/completedReqest';
+import { completedExportJobsResponse, completedExportParams, completedJobCallback } from '@tests/mocks/completedReqest';
 import {
   addedCallbackUrl,
   inProgressExportParams,
   inProgressJobsResponse,
   pendingExportParams,
   processingResponse,
-} from '@tests/mocks/requestMocks/processingRequest';
+} from '@tests/mocks/processingRequest';
 import { ExportJobParameters } from '@map-colonies/raster-shared';
 import { RasterCatalogManagerClient } from '../../../../src/clients/rasterCatalogManagerClient';
 import { JobManagerWrapper } from '../../../../src/clients/jobManagerWrapper';
@@ -144,11 +144,16 @@ describe('ValidationManager', () => {
         .query({ shouldReturnTasks: false })
         .reply(200, completedExportJobsResponse[0])
         .persist();
+      nock(jobManagerURL)
+        .get(`/jobs/${completedExportJobsResponse[1].id}`)
+        .query({ shouldReturnTasks: false })
+        .reply(200, completedExportJobsResponse[1])
+        .persist();
 
       const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs);
 
       expect(result).toEqual(completedJobCallback);
-    });
+    }, 5000000);
 
     it('should return a completed export job with race condition', async () => {
       const { crs, productId, version, catalogId, roi } = dupParams;

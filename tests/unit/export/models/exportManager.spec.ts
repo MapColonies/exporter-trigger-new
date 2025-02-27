@@ -5,22 +5,25 @@ import { v4 as uuidv4 } from 'uuid';
 import { container } from 'tsyringe';
 import { SERVICES } from '@src/common/constants';
 import { ExportManager } from '@src/export/models/exportManager';
-import { createExportRequestNoRoiWithCallback, createExportRequestWithoutCallback, createExportResponse, layerInfo } from '@tests/mocks/data';
+import {
+  createExportRequestNoRoiWithCallback,
+  createExportRequestWithoutCallback,
+  createExportResponse,
+  getJobStatusByIdResponse,
+  initExportRequestBody,
+  initExportRequestBodyNoRoiWithCallback,
+  initExportResponse,
+  layerInfo,
+} from '@tests/mocks/data';
 import { NotFoundError } from '@map-colonies/error-types';
-import { completedExportJobsResponse, completedExportParams, completedJobCallback } from '@tests/mocks/requestMocks/completedReqest';
+import { completedExportJobsResponse, completedExportParams, completedJobCallback } from '@tests/mocks/completedReqest';
 import {
   findCriteria,
   inProgressExportParams,
   inProgressJobsResponse,
   pendingExportParams,
   processingResponse,
-} from '@tests/mocks/requestMocks/processingRequest';
-import {
-  getJobStatusByIdResponse,
-  initExportRequestBody,
-  initExportRequestBodyNoRoiWithCallback,
-  initExportResponse,
-} from '@tests/mocks/data/jobMocks';
+} from '@tests/mocks/processingRequest';
 import { JobExportResponse } from '@src/common/interfaces';
 import { ValidationManager } from '../../../../src/export/models/validationManager';
 import { configMock, registerDefaultConfig, clear as clearConfig } from '../../../mocks/config';

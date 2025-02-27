@@ -11,16 +11,14 @@ import {
   createExportRequestWithRoiAndCallback,
   createExportRequestWithRoiAndNewCallback,
   createExportResponse,
-  layerInfo,
-} from '@tests/mocks/data';
-import nock from 'nock';
-import {
   getJobStatusByIdResponse,
   initExportRequestBody,
   initExportRequestBodyNoRoiWithCallback,
   initExportResponse,
-} from '@tests/mocks/data/jobMocks';
-import { completedExportJobsResponse, completedExportParams, completedJobCallback } from '@tests/mocks/requestMocks/completedReqest';
+  layerInfo,
+} from '@tests/mocks/data';
+import nock from 'nock';
+import { completedExportJobsResponse, completedExportParams, completedJobCallback } from '@tests/mocks/completedReqest';
 import {
   addedCallbackUrl,
   findCriteria,
@@ -28,7 +26,7 @@ import {
   inProgressJobsResponse,
   pendingExportParams,
   processingResponse,
-} from '@tests/mocks/requestMocks/processingRequest';
+} from '@tests/mocks/processingRequest';
 import { ValidationManager } from '@src/export/models/validationManager';
 import { CallbackUrlsTargetArray, ExportJobParameters } from '@map-colonies/raster-shared';
 import { JobExportResponse } from '@src/common/interfaces';
