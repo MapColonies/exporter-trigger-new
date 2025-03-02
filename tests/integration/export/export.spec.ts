@@ -225,8 +225,8 @@ describe('export', function () {
       });
       it('should return 200 status code, return a processing job and add non duplicate callbackUrls', async function () {
         const layerId = createExportRequestNoRoiWithCallback.dbId;
-        const matchingJob = [{ ...inProgressJobsResponse[0] }];
-        const updatedCallbackParameters = JSON.parse(JSON.stringify(matchingJob[0].parameters)) as ExportJobParameters;
+        const duplicateJob = [{ ...inProgressJobsResponse[0] }];
+        const updatedCallbackParameters = JSON.parse(JSON.stringify(duplicateJob[0].parameters)) as ExportJobParameters;
         (updatedCallbackParameters.exportInputParams.callbackUrls as CallbackUrlsTargetArray).push(addedCallbackUrl[0]);
 
         nock(catalogManagerURL).post(`/records/find`, { id: layerId }).reply(200, [layerInfo]);
@@ -238,8 +238,8 @@ describe('export', function () {
         nock(jobManagerURL)
           .get('/jobs')
           .query(inProgressExportParams as Record<string, string>)
-          .reply(200, matchingJob);
-        nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).query({ shouldReturnTasks: false }).reply(200, matchingJob[0]).persist();
+          .reply(200, duplicateJob);
+        nock(jobManagerURL).get(`/jobs/${duplicateJob[0].id}`).query({ shouldReturnTasks: false }).reply(200, duplicateJob[0]).persist();
         nock(jobManagerURL)
           .get('/jobs')
           .query(pendingExportParams as Record<string, string>)
@@ -249,7 +249,7 @@ describe('export', function () {
           .reply(200, []);
 
         nock(jobManagerURL)
-          .put(`/jobs/${matchingJob[0].id}`, JSON.stringify({ parameters: updatedCallbackParameters }))
+          .put(`/jobs/${duplicateJob[0].id}`, JSON.stringify({ parameters: updatedCallbackParameters }))
           .reply(200, []);
 
         const response = await requestSender.export(createExportRequestWithRoiAndNewCallback);
@@ -262,11 +262,11 @@ describe('export', function () {
 
       it('should return 200 status code, return a processing job and add new callbackUrls', async function () {
         const layerId = createExportRequestNoRoiWithCallback.dbId;
-        const matchingJob = [{ ...inProgressJobsResponse[0] }];
+        const duplicateJob = [{ ...inProgressJobsResponse[0] }];
         // Perform a deep copy of the parameters object
-        const updatedCallbackParameters = JSON.parse(JSON.stringify(matchingJob[0].parameters)) as ExportJobParameters;
+        const updatedCallbackParameters = JSON.parse(JSON.stringify(duplicateJob[0].parameters)) as ExportJobParameters;
         // Use type assertion to safely delete the property
-        delete (matchingJob[0].parameters.exportInputParams as { callbackUrls?: unknown }).callbackUrls;
+        delete (duplicateJob[0].parameters.exportInputParams as { callbackUrls?: unknown }).callbackUrls;
 
         nock(catalogManagerURL).post(`/records/find`, { id: layerId }).reply(200, [layerInfo]);
         nock(jobManagerURL)
@@ -277,8 +277,8 @@ describe('export', function () {
         nock(jobManagerURL)
           .get('/jobs')
           .query(inProgressExportParams as Record<string, string>)
-          .reply(200, matchingJob);
-        nock(jobManagerURL).get(`/jobs/${matchingJob[0].id}`).query({ shouldReturnTasks: false }).reply(200, matchingJob[0]).persist();
+          .reply(200, duplicateJob);
+        nock(jobManagerURL).get(`/jobs/${duplicateJob[0].id}`).query({ shouldReturnTasks: false }).reply(200, duplicateJob[0]).persist();
         nock(jobManagerURL)
           .get('/jobs')
           .query(pendingExportParams as Record<string, string>)
@@ -288,7 +288,7 @@ describe('export', function () {
           .reply(200, []);
 
         nock(jobManagerURL)
-          .put(`/jobs/${matchingJob[0].id}`, JSON.stringify({ parameters: updatedCallbackParameters }))
+          .put(`/jobs/${duplicateJob[0].id}`, JSON.stringify({ parameters: updatedCallbackParameters }))
           .reply(200, []);
 
         const response = await requestSender.export(createExportRequestWithRoiAndCallback);
