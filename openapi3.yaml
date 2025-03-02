@@ -358,6 +358,7 @@ components:
             - Failed
             - Expired
             - Aborted
+            - Suspended
     GeometryCollection:
       type: object
       description: GeoJSon geometry collection

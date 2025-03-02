@@ -68,7 +68,6 @@ export class JobManagerWrapper extends JobManagerClient {
   public async updateJobExpirationDate(jobId: string): Promise<void> {
     const newExpirationDate = getUTCDate();
     newExpirationDate.setDate(newExpirationDate.getDate() + this.expirationDays);
-    //TODO: remove this
     const job = await this.getJob<ExportJobParameters, unknown>(jobId);
     const oldExpirationDate = new Date(job.parameters.cleanupDataParams?.cleanupExpirationTimeUTC as Date);
     if (oldExpirationDate < newExpirationDate) {
@@ -109,6 +108,10 @@ export class JobManagerWrapper extends JobManagerClient {
         targetFormat: data.targetFormat,
         outputFormatStrategy: data.outputFormatStrategy,
       },
+      cleanupDataParams: {
+        directoryPath: data.relativeDirectoryPath,
+        cleanupExpirationTimeUTC: expirationDate,
+      },
     };
 
     const createJobRequest: CreateExportJobBody = {
@@ -146,6 +149,7 @@ export class JobManagerWrapper extends JobManagerClient {
       types: [this.exportJobType],
       shouldReturnTasks,
       statuses: [OperationStatus.IN_PROGRESS, OperationStatus.PENDING],
+      domain: this.jobDomain,
     };
 
     this.logger.debug({ msg: `Getting processing export jobs `, ...criteria });

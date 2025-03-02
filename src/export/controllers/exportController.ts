@@ -21,7 +21,7 @@ export class ExportController {
   public createExport: CreateExportHandler = async (req, res, next) => {
     const exportRequest: CreateExportRequest = createExportRequestSchema.parse(req.body);
     try {
-      this.logger.debug({ msg: `Creating export request with export request:`, exportRequest });
+      this.logger.debug({ msg: `Creating export request:`, exportRequest });
       const jobCreated = await this.manager.createExport(exportRequest);
       return res.status(httpStatus.OK).json(jobCreated);
     } catch (err) {

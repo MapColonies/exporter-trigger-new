@@ -39,7 +39,7 @@ export const inProgressExportParams = {
   version: processingDupParams.version,
   isCleaned: false,
   type: 'Export',
-  shouldReturnTasks: true,
+  shouldReturnTasks: false,
   status: 'In-Progress',
 } as IFindJobsRequest;
 
@@ -48,7 +48,7 @@ export const pendingExportParams = {
   version: processingDupParams.version,
   isCleaned: false,
   type: 'Export',
-  shouldReturnTasks: true,
+  shouldReturnTasks: false,
   status: 'Pending',
 } as IFindJobsRequest;
 
@@ -261,4 +261,5 @@ export const findCriteria: IFindJobsByCriteriaBody = {
   types: ['Export'],
   shouldReturnTasks: false,
   statuses: [OperationStatus.IN_PROGRESS, OperationStatus.PENDING],
+  domain: 'RASTER',
 };

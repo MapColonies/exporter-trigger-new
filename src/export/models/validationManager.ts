@@ -165,8 +165,8 @@ export class ValidationManager {
     newCallbacks?: CallbackUrlsTargetArray
   ): Promise<ICreateExportJobResponse | undefined> {
     this.logger.info({ ...dupParams, msg: `Checking for PROCESSING duplications with parameters` });
-    const inProgressJobs = await this.jobManagerClient.findExportJobs(OperationStatus.IN_PROGRESS, dupParams, true);
-    const pendingJobs = await this.jobManagerClient.findExportJobs(OperationStatus.PENDING, dupParams, true);
+    const inProgressJobs = await this.jobManagerClient.findExportJobs(OperationStatus.IN_PROGRESS, dupParams);
+    const pendingJobs = await this.jobManagerClient.findExportJobs(OperationStatus.PENDING, dupParams);
     const processingJobs = [...(inProgressJobs ?? []), ...(pendingJobs ?? [])];
     const duplicateProcessingJob = this.findDuplicatedExportJob(processingJobs, dupParams);
     if (duplicateProcessingJob) {

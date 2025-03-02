@@ -21,6 +21,7 @@ import { configMock, registerDefaultConfig, clear as clearConfig } from '../../.
 import { ValidationManager } from '../../../../src/export/models/validationManager';
 
 let validationManager: ValidationManager;
+let jobManagerWrapper: JobManagerWrapper;
 
 describe('ValidationManager', () => {
   registerDefaultConfig();
@@ -30,7 +31,7 @@ describe('ValidationManager', () => {
     registerDefaultConfig();
     const logger = jsLogger({ enabled: false });
     container.register(SERVICES.LOGGER, { useValue: logger });
-    const jobManagerWrapper = new JobManagerWrapper(logger, trace.getTracer('testTracer'));
+    jobManagerWrapper = new JobManagerWrapper(logger, trace.getTracer('testTracer'));
     const catalogManagerClient = new RasterCatalogManagerClient(logger, trace.getTracer('testTracer'));
     validationManager = new ValidationManager(configMock, logger, trace.getTracer('testTracer'), jobManagerWrapper, catalogManagerClient);
   });
@@ -153,7 +154,7 @@ describe('ValidationManager', () => {
       const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs);
 
       expect(result).toEqual(completedJobCallback);
-    }, 5000000);
+    });
 
     it('should return a completed export job with race condition', async () => {
       const { crs, productId, version, catalogId, roi } = dupParams;
@@ -187,7 +188,7 @@ describe('ValidationManager', () => {
       const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs);
 
       expect(result).toEqual(completedJobCallback);
-    }, 50000000);
+    });
 
     it('should return completed job duplication with expirationDate update', async () => {
       const { crs, productId, version, catalogId, roi } = dupParams;
@@ -215,9 +216,12 @@ describe('ValidationManager', () => {
         .reply(200, completedJobWithChangedExpiration)
         .persist();
       nock(jobManagerURL).put(`/jobs/${completedExportJobsResponse[0].id}`, JSON.stringify(updateExpirationParams)).reply(200);
+      const expirationDateSpy = jest.spyOn(jobManagerWrapper, 'updateJobExpirationDate');
+
       const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs);
 
       expect(result).toEqual(completedJobCallback);
+      expect(expirationDateSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should return a processing export job without race condition', async () => {
@@ -312,9 +316,11 @@ describe('ValidationManager', () => {
         .put(`/jobs/${matchingJob[0].id}`, JSON.stringify({ parameters: updatedCallbackParameters }))
         .reply(200, []);
 
+      //const updateCallbackSpy = jest.spyOn(validationManager as unknown as ValidationManager, 'updateExportCallbackURLs');
       const result = await validationManager.checkForExportDuplicate(productId, version, catalogId, roi, crs, addedCallbackUrl);
 
       expect(result).toEqual(processingResponse);
+      //expect(updateCallbackSpy).toHaveBeenCalledTimes(1);
     });
 
     it('should return an processing export job and create a new callback property', async () => {

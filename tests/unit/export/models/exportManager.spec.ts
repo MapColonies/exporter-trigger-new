@@ -52,6 +52,7 @@ describe('ExportManager', () => {
   afterEach(() => {
     nock.cleanAll();
     clearConfig();
+    jest.useRealTimers();
     jest.resetAllMocks();
   });
   describe('getJobStatusByJobId', () => {

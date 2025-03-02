@@ -34,6 +34,7 @@ describe('JobManagerClient', () => {
 
   afterEach(() => {
     container.clearInstances();
+    jest.useRealTimers();
     jest.resetAllMocks();
     jest.restoreAllMocks();
   });
@@ -118,6 +119,7 @@ describe('JobManagerClient', () => {
     describe('createExportJob', () => {
       it('should post a new init export request', async () => {
         createJob = jest.fn();
+        jest.useFakeTimers().setSystemTime(new Date('2025-02-26T00:00:00Z'));
 
         (jobManagerClient as unknown as { createJob: unknown }).createJob = createJob.mockResolvedValue(createJobResponse);
 

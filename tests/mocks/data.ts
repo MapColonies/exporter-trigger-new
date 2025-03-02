@@ -166,6 +166,10 @@ export function generateCreateJobRequest(createExportData: IExportInitRequest): 
         targetFormat: createExportData.targetFormat,
         gpkgEstimatedSize: createExportData.gpkgEstimatedSize,
       },
+      cleanupDataParams: {
+        directoryPath: createExportData.relativeDirectoryPath,
+        cleanupExpirationTimeUTC: new Date('2025-03-28T00:00:00.000Z'),
+      },
     },
     internalId: createExportData.catalogId,
     productType: createExportData.productType,
@@ -232,6 +236,10 @@ export const initExportRequestBody = {
       outputFormatStrategy: TileFormatStrategy.MIXED,
       targetFormat: TileOutputFormat.PNG,
       gpkgEstimatedSize: 12500,
+    },
+    cleanupDataParams: {
+      directoryPath: '63baedae-cb5b-4c0a-a7db-8eb6b9105cb7',
+      cleanupExpirationTimeUTC: '2025_01_09T10_04_06_711Z',
     },
   },
   internalId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',
@@ -311,6 +319,10 @@ export const initExportRequestBodyNoRoiWithCallback = {
       outputFormatStrategy: TileFormatStrategy.MIXED,
       targetFormat: TileOutputFormat.PNG,
       gpkgEstimatedSize: 12500,
+    },
+    cleanupDataParams: {
+      directoryPath: 'b30e5a99b78a6c10e65164fd54b14ad0',
+      cleanupExpirationTimeUTC: '2025_01_09T12_39_36_961Z',
     },
   },
   internalId: '8b867544-2dab-43a1-be6e-f23ec83c19b4',

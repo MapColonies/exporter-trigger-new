@@ -42,14 +42,12 @@ describe('export', function () {
   let requestSender: ExportSender;
   let catalogManagerURL: string;
   let jobManagerURL: string;
-  //let depContainer: DependencyContainer;
 
   beforeAll(async function () {
     await initConfig(true);
   });
 
   beforeEach(async function () {
-    //container.clearInstances();
     const [app] = await getApp({
       override: [...getTestContainerConfig()],
       useChild: false,
@@ -158,7 +156,7 @@ describe('export', function () {
 
         expect(response.status).toBe(httpStatusCodes.OK);
         expect(response).toSatisfyApiSpec();
-      }, 5000000);
+      });
 
       it('should return 200 status code and return a processing job', async function () {
         const layerId = createExportRequestWithoutCallback.dbId;
@@ -269,7 +267,6 @@ describe('export', function () {
         const updatedCallbackParameters = JSON.parse(JSON.stringify(matchingJob[0].parameters)) as ExportJobParameters;
         // Use type assertion to safely delete the property
         delete (matchingJob[0].parameters.exportInputParams as { callbackUrls?: unknown }).callbackUrls;
-        //updatedCallbackParameters.exportInputParams.callbackUrls = addedCallbackUrl;
 
         nock(catalogManagerURL).post(`/records/find`, { id: layerId }).reply(200, [layerInfo]);
         nock(jobManagerURL)
