@@ -6,9 +6,9 @@ import { Metrics } from '@map-colonies/telemetry';
 import { InjectionObject, registerDependencies } from '@common/dependencyRegistration';
 import { SERVICES, SERVICE_NAME } from '@common/constants';
 import { getTracing } from '@common/tracing';
-import { resourceNameRouterFactory, RESOURCE_NAME_ROUTER_SYMBOL } from './resourceName/routes/resourceNameRouter';
-import { anotherResourceRouterFactory, ANOTHER_RESOURCE_ROUTER_SYMBOL } from './anotherResource/routes/anotherResourceRouter';
 import { getConfig } from './common/config';
+import { STORAGE_ROUTER_SYMBOL, storageRouterFactory } from './storage/routes/storageRouter';
+import { EXPORT_ROUTER_SYMBOL, exportRouterFactory } from './export/routes/exportRouter';
 
 export interface RegisterOptions {
   override?: InjectionObject<unknown>[];
@@ -32,8 +32,8 @@ export const registerExternalValues = async (options?: RegisterOptions): Promise
     { token: SERVICES.LOGGER, provider: { useValue: logger } },
     { token: SERVICES.TRACER, provider: { useValue: tracer } },
     { token: SERVICES.METER, provider: { useValue: OtelMetrics.getMeterProvider().getMeter(SERVICE_NAME) } },
-    { token: RESOURCE_NAME_ROUTER_SYMBOL, provider: { useFactory: resourceNameRouterFactory } },
-    { token: ANOTHER_RESOURCE_ROUTER_SYMBOL, provider: { useFactory: anotherResourceRouterFactory } },
+    { token: STORAGE_ROUTER_SYMBOL, provider: { useFactory: storageRouterFactory } },
+    { token: EXPORT_ROUTER_SYMBOL, provider: { useFactory: exportRouterFactory } },
     {
       token: 'onSignal',
       provider: {
